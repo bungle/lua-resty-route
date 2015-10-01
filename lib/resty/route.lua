@@ -1,8 +1,16 @@
 local setmetatable = setmetatable
 local getmetatable = getmetatable
+local select = select
 local ipairs = ipairs
 local pairs = pairs
 local type = type
+local unpack = table.unpack or unpack
+local pack = table.pack
+if not pack then
+    pack = function(...)
+        return { n = select("#", ...), ...}
+    end
+end
 local function tofunction(f, m)
     local t = type(f)
     if t == "function" then
@@ -22,10 +30,22 @@ local function tofunction(f, m)
     return nil
 end
 local function filter(route, location, pattern, self)
-    -- route.matcher(location, pattern)
+    if pattern then
+        return (function(...)
+            if select(1, ...) then
+                return true, self(...)
+            end
+        end)(route:match(location, pattern))
+    else
+        return true, self(route:match(location, pattern))
+    end
 end
 local function router(route, location, pattern, self)
-    -- route.matcher(location, pattern)
+    return (function(...)
+        if select(1, ...) then
+            return true, self(...)
+        end
+    end)(route:match(location, pattern))
 end
 local route = {}
 route.__index = route
@@ -54,6 +74,9 @@ function route.new(opts)
         }
     }, route)
 end
+function route:match(location, pattern)
+    return self.matcher(location, pattern)
+end
 function route:filter(pattern, phase)
     local c = self.filters[phase]
     local t = type(pattern)
@@ -77,7 +100,7 @@ function route:filter(pattern, phase)
         for _, func in ipairs(pattern) do
             local f = tofunction(func)
             c[#c+1] = function(location)
-                return filter(self, location, pattern, f)
+                return filter(self, location, nil, f)
             end
         end
     else
@@ -161,18 +184,21 @@ end
 function route:notfound()
 end
 function route:to(location, method)
+    local results
     local before = self.filters.before
     for _, filter in ipairs(before) do
-        print(filter(location))
+        filter(location)
     end
     local routes = self.routes[method]
     for _, route in ipairs(routes) do
-        print(route(location))
+        results = pack(route(location))
+        if results.n > 0 then break end
     end
     local after = self.filters.after
     for _, filter in ipairs(after) do
-        print(filter(location))
+        filter(location)
     end
+    return unpack(results, 1, results.n)
 end
 
 return route

@@ -200,5 +200,4 @@ function route:to(location, method)
     end
     return unpack(results, 1, results.n)
 end
-
 return route

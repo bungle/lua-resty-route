@@ -6,7 +6,9 @@ local pairs = pairs
 local type = type
 local unpack = table.unpack or unpack
 local pack = table.pack
+local ngx = ngx
 local var = ngx and ngx.var
+local redirect = ngx and ngx.redirect
 if not pack then
     pack = function(...)
         return { n = select("#", ...), ...}
@@ -51,7 +53,7 @@ end
 local route = {}
 route.__index = route
 function route.new(opts)
-    local m, t = "string", type(opts)
+    local m, t = ngx and "ngx" or "match", type(opts)
     if t == "table" then
         if opts.matcher then m = opts.matcher end
     end
@@ -177,6 +179,10 @@ function route:unlink(pattern, func)
 end
 function route:trace(pattern, func)
     return self(pattern, "trace", func)
+end
+function route:exec(uri, args)
+end
+function route:redirect(uri, status)
 end
 function route:ws()
 end

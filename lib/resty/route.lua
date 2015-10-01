@@ -6,6 +6,7 @@ local pairs = pairs
 local type = type
 local unpack = table.unpack or unpack
 local pack = table.pack
+local var = ngx and ngx.var
 if not pack then
     pack = function(...)
         return { n = select("#", ...), ...}
@@ -184,6 +185,12 @@ end
 function route:notfound()
 end
 function route:to(location, method)
+    if not location and var then
+        location = var.uri
+    end
+    if not method and var then
+        method = var.request_method
+    end
     local results
     local before = self.filters.before
     for _, filter in ipairs(before) do

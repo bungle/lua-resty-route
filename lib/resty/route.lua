@@ -22,7 +22,7 @@ local function tofunction(f, m)
         return f
     elseif t == "table" then
         if m then
-            return tofunction(t[m])
+            return tofunction(f[m])
         else
             local mt = getmetatable(f) or {}
             if mt.__call then
@@ -89,13 +89,13 @@ function route:filter(pattern, phase)
         return function(filters)
             if type(filters) == "table" then
                 for _, func in ipairs(filters) do
-                    local f = tofunction(func)
+                    local f = tofunction(func, phase)
                     c[#c+1] = function(location)
                         return filter(self, location, pattern, f)
                     end
                 end
             else
-                local f = tofunction(filters)
+                local f = tofunction(filters, phase)
                 c[#c+1] = function(location)
                     return filter(self, location, pattern, f)
                 end
@@ -103,13 +103,13 @@ function route:filter(pattern, phase)
         end
     elseif t == "table" then
         for _, func in ipairs(pattern) do
-            local f = tofunction(func)
+            local f = tofunction(func, phase)
             c[#c+1] = function(location)
                 return filter(self, location, nil, f)
             end
         end
     else
-        local f = tofunction(pattern)
+        local f = tofunction(pattern, phase)
         c[#c+1] = function(location)
             return filter(self, location, pattern, f)
         end
@@ -126,7 +126,7 @@ function route:__call(pattern, method, func)
     local c = self.routes
     if func then
         local c = c[method]
-        local f = tofunction(func)
+        local f = tofunction(func, method)
         c[#c+1] = function(location)
             return router(self, location, pattern, f)
         end
@@ -137,13 +137,13 @@ function route:__call(pattern, method, func)
                 for method, func in pairs(routes) do
                     local c = c[method]
                     local f = tofunction(func)
-                    c[#c+1] = function(location)
+                    c[#c+1] = function(location, method)
                         return router(self, location, pattern, f)
                     end
                 end
             else
                 local c = c[method]
-                local f = tofunction(routes)
+                local f = tofunction(routes, method)
                 c[#c+1] = function(location)
                     return router(self, location, pattern, f)
                 end

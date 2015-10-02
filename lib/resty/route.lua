@@ -1,5 +1,7 @@
 local setmetatable = setmetatable
 local getmetatable = getmetatable
+local setfenv = setfenv
+local getfenv = getfenv
 local select = select
 local ipairs = ipairs
 local pairs = pairs
@@ -16,21 +18,18 @@ if not pack then
         return { n = select("#", ...), ...}
     end
 end
-local function tofunction(f, m)
+local function tofunction(e, f, m)
     local t = type(f)
     if t == "function" then
-        return f
+        return e and setfenv(f, setmetatable(e, { __index = getfenv(f) })) or f
     elseif t == "table" then
         if m then
-            return tofunction(f[m])
+            return tofunction(e, f[m])
         else
-            local mt = getmetatable(f) or {}
-            if mt.__call then
-                return f
-            end
+            return tofunction(e, f, "__call")
         end
     elseif t == "string" then
-        return tofunction(require(f), m)
+        return tofunction(e, require(f), m)
     end
     return nil
 end
@@ -59,7 +58,7 @@ function route.new(opts)
     if t == "table" then
         if opts.matcher then m = opts.matcher end
     end
-    return setmetatable({
+    local self = setmetatable({
         matcher = require("resty.route.matchers." .. m),
         filters = {
             before = {},
@@ -78,24 +77,27 @@ function route.new(opts)
             trace   = {}
         }
     }, route)
+    self.env = { route = self }
+    return self
 end
 function route:match(location, pattern)
     return self.matcher(location, pattern)
 end
 function route:filter(pattern, phase)
+    local e = self.env
     local c = self.filters[phase]
     local t = type(pattern)
     if t == "string" then
         return function(filters)
             if type(filters) == "table" then
                 for _, func in ipairs(filters) do
-                    local f = tofunction(func, phase)
+                    local f = tofunction(e, func, phase)
                     c[#c+1] = function(location)
                         return filter(self, location, pattern, f)
                     end
                 end
             else
-                local f = tofunction(filters, phase)
+                local f = tofunction(e, filters, phase)
                 c[#c+1] = function(location)
                     return filter(self, location, pattern, f)
                 end
@@ -103,13 +105,13 @@ function route:filter(pattern, phase)
         end
     elseif t == "table" then
         for _, func in ipairs(pattern) do
-            local f = tofunction(func, phase)
+            local f = tofunction(e, func, phase)
             c[#c+1] = function(location)
                 return filter(self, location, nil, f)
             end
         end
     else
-        local f = tofunction(pattern, phase)
+        local f = tofunction(e, pattern, phase)
         c[#c+1] = function(location)
             return filter(self, location, pattern, f)
         end
@@ -123,10 +125,11 @@ function route:after(pattern)
     return self:filter(pattern, "after")
 end
 function route:__call(pattern, method, func)
+    local e = self.env
     local c = self.routes
     if func then
         local c = c[method]
-        local f = tofunction(func, method)
+        local f = tofunction(e, func, method)
         c[#c+1] = function(location)
             return router(self, location, pattern, f)
         end
@@ -136,14 +139,14 @@ function route:__call(pattern, method, func)
             if type(routes) == "table" then
                 for method, func in pairs(routes) do
                     local c = c[method]
-                    local f = tofunction(func)
-                    c[#c+1] = function(location, method)
+                    local f = tofunction(e, func, method)
+                    c[#c+1] = function(location)
                         return router(self, location, pattern, f)
                     end
                 end
             else
                 local c = c[method]
-                local f = tofunction(routes, method)
+                local f = tofunction(e, routes, method)
                 c[#c+1] = function(location)
                     return router(self, location, pattern, f)
                 end
@@ -183,15 +186,15 @@ function route:trace(pattern, func)
     return self(pattern, "trace", func)
 end
 function route:exit(status)
-    -- should after filters be executed?
+    -- TODO: should after filters be executed?
     return exit(status)
 end
 function route:exec(uri, args)
-    -- should after filters be executed?
+    -- TODO: should after filters be executed?
     return exec(uri, args)
 end
 function route:redirect(uri, status)
-    -- should after filters be executed?
+    -- TODO: should after filters be executed?
     return redirect(uri, status)
 end
 function route:ws()

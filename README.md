@@ -1,6 +1,6 @@
 # lua-resty-route
 
-**lua-resty-route** is a URL routing library for Lua and OpenResty supporting
+**lua-resty-route** is a URL routing library for OpenResty supporting
 pluggable matching engines.
 
 **This library is heavily work-in-progress. Please do not use it until further

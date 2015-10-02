@@ -7,8 +7,10 @@ local type = type
 local unpack = table.unpack or unpack
 local pack = table.pack
 local ngx = ngx
-local var = ngx and ngx.var
-local redirect = ngx and ngx.redirect
+local var = ngx.var
+local redirect = ngx.redirect
+local exit = ngx.exit
+local exec = ngx.exec
 if not pack then
     pack = function(...)
         return { n = select("#", ...), ...}
@@ -180,9 +182,17 @@ end
 function route:trace(pattern, func)
     return self(pattern, "trace", func)
 end
+function route:exit(status)
+    -- should after filters be executed?
+    return exit(status)
+end
 function route:exec(uri, args)
+    -- should after filters be executed?
+    return exec(uri, args)
 end
 function route:redirect(uri, status)
+    -- should after filters be executed?
+    return redirect(uri, status)
 end
 function route:ws()
 end
@@ -191,12 +201,8 @@ end
 function route:notfound()
 end
 function route:to(location, method)
-    if not location and var then
-        location = var.uri
-    end
-    if not method and var then
-        method = var.request_method
-    end
+    location = location or var.uri
+    method = method or var.request_method
     local results
     local before = self.filters.before
     for _, filter in ipairs(before) do

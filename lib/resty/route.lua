@@ -77,14 +77,14 @@ function route.new(opts)
             trace   = {}
         }
     }, route)
-    self.env = { route = self }
+    self.context = { route = self }
     return self
 end
 function route:match(location, pattern)
     return self.matcher(location, pattern)
 end
 function route:filter(pattern, phase)
-    local e = self.env
+    local e = self.context
     local c = self.filters[phase]
     local t = type(pattern)
     if t == "string" then
@@ -125,7 +125,7 @@ function route:after(pattern)
     return self:filter(pattern, "after")
 end
 function route:__call(pattern, method, func)
-    local e = self.env
+    local e = self.context
     local c = self.routes
     if func then
         local c = c[method]

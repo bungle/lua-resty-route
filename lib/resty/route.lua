@@ -41,7 +41,7 @@ local function filter(route, location, pattern, self)
             end
         end)(route:match(location, pattern))
     else
-        return true, self(route:match(location, pattern))
+        return true, self()
     end
 end
 local function router(route, location, pattern, self)

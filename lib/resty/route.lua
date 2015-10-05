@@ -18,6 +18,22 @@ if not pack then
         return { n = select("#", ...), ...}
     end
 end
+local methods = {
+    get     = "GET",
+    head    = "HEAD",
+    post    = "POST",
+    put     = "PUT",
+    patch   = "PATCH",
+    delete  = "DELETE",
+    options = "OPTIONS",
+    link    = "LINK",
+    unlink  = "UNLINK",
+    trace   = "TRACE"
+}
+local verbs = {}
+for k, v in pairs(methods) do
+    verbs[v] = k
+end
 local function tofunction(e, f, m)
     local t = type(f)
     if t == "function" then
@@ -64,19 +80,13 @@ function route.new(opts)
             before = {},
             after  = {}
         },
-        routes = {
-            get     = {},
-            head    = {},
-            post    = {},
-            put     = {},
-            patch   = {},
-            delete  = {},
-            options = {},
-            link    = {},
-            unlink  = {},
-            trace   = {}
-        }
+        routes = {}
     }, route)
+    for _, v in pairs(verbs) do
+        self.routes[v] = {}
+        self.filters.before[v] = {}
+        self.filters.after[v] = {}
+    end
     self.context = { route = self }
     return self
 end
@@ -88,6 +98,10 @@ function route:filter(pattern, phase)
     local c = self.filters[phase]
     local t = type(pattern)
     if t == "string" then
+        if methods[pattern] then
+            c = c[pattern]
+            pattern = nil
+        end
         return function(filters)
             if type(filters) == "table" then
                 for _, func in ipairs(filters) do
@@ -155,35 +169,10 @@ function route:__call(pattern, method, func)
         end
     end
 end
-function route:get(pattern, func)
-    return self(pattern, "get", func)
-end
-function route:head(pattern, func)
-    return self(pattern, "head", func)
-end
-function route:post(pattern, func)
-    return self(pattern, "post", func)
-end
-function route:put(pattern, func)
-    return self(pattern, "put", func)
-end
-function route:patch(pattern, func)
-    return self(pattern, "patch", func)
-end
-function route:delete(pattern, func)
-    return self(pattern, "delete", func)
-end
-function route:options(pattern, func)
-    return self(pattern, "options", func)
-end
-function route:link(pattern, func)
-    return self(pattern, "link", func)
-end
-function route:unlink(pattern, func)
-    return self(pattern, "unlink", func)
-end
-function route:trace(pattern, func)
-    return self(pattern, "trace", func)
+for _, v in pairs(verbs) do
+    route[v] = function(self, pattern, func)
+        return self(pattern, v, func)
+    end
 end
 function route:exit(status)
     -- TODO: should after filters be executed?
@@ -197,7 +186,7 @@ function route:redirect(uri, status)
     -- TODO: should after filters be executed?
     return redirect(uri, status)
 end
-function route:ws()
+function route:websocket()
 end
 function route:error()
 end
@@ -205,10 +194,13 @@ function route:notfound()
 end
 function route:to(location, method)
     location = location or var.uri
-    method = method or var.request_method
+    method = method or verbs[var.request_method]
     local results
     local before = self.filters.before
     for _, filter in ipairs(before) do
+        filter(location)
+    end
+    for _, filter in ipairs(before[method]) do
         filter(location)
     end
     local routes = self.routes[method]
@@ -217,6 +209,9 @@ function route:to(location, method)
         if results.n > 0 then break end
     end
     local after = self.filters.after
+    for _, filter in ipairs(after[method]) do
+        filter(location)
+    end
     for _, filter in ipairs(after) do
         filter(location)
     end

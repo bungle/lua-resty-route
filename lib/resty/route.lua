@@ -75,18 +75,8 @@ function route.new(opts)
         if opts.matcher then m = opts.matcher end
     end
     local self = setmetatable({
-        matcher = require("resty.route.matchers." .. m),
-        filters = {
-            before = {},
-            after  = {}
-        },
-        routes = {}
+        matcher = require("resty.route.matchers." .. m)
     }, route)
-    for _, v in pairs(verbs) do
-        self.routes[v] = {}
-        self.filters.before[v] = {}
-        self.filters.after[v] = {}
-    end
     self.context = { route = self }
     return self
 end
@@ -95,10 +85,19 @@ function route:match(location, pattern)
 end
 function route:filter(pattern, phase)
     local e = self.context
+    if not self.filters then
+        self.filters = {}
+    end
+    if not self.filters[phase] then
+        self.filters[phase] = {}
+    end
     local c = self.filters[phase]
     local t = type(pattern)
     if t == "string" then
         if methods[pattern] then
+            if not c[pattern] then
+                c[pattern] = {}
+            end
             c = c[pattern]
             pattern = nil
         end
@@ -140,8 +139,14 @@ function route:after(pattern)
 end
 function route:__call(pattern, method, func)
     local e = self.context
+    if not self.routes then
+        self.routes = {}
+    end
     local c = self.routes
     if func then
+        if not c[method] then
+            c[method] = {}
+        end
         local c = c[method]
         local f = tofunction(e, func, method)
         c[#c+1] = function(location)
@@ -152,6 +157,9 @@ function route:__call(pattern, method, func)
         return function(routes)
             if type(routes) == "table" then
                 for method, func in pairs(routes) do
+                    if not c[method] then
+                        c[method] = {}
+                    end
                     local c = c[method]
                     local f = tofunction(e, func, method)
                     c[#c+1] = function(location)
@@ -159,6 +167,9 @@ function route:__call(pattern, method, func)
                     end
                 end
             else
+                if not c[method] then
+                    c[method] = {}
+                end
                 local c = c[method]
                 local f = tofunction(e, routes, method)
                 c[#c+1] = function(location)
@@ -193,28 +204,50 @@ end
 function route:notfound()
 end
 function route:to(location, method)
-    location = location or var.uri
-    method = method or verbs[var.request_method]
+    method = method or "get"
     local results
-    local before = self.filters.before
-    for _, filter in ipairs(before) do
-        filter(location)
+    local filters = self.filters
+    if filters then
+        if filters.before then
+            local before = filters.before
+            for _, filter in ipairs(before) do
+                filter(location)
+            end
+            local bm = before[method]
+            if bm then
+                for _, filter in ipairs(bm) do
+                    filter(location)
+                end
+            end
+        end
     end
-    for _, filter in ipairs(before[method]) do
-        filter(location)
+    local routes = self.routes
+    if routes then
+        routes = routes[method]
+        if routes then
+            for _, route in ipairs(routes) do
+                results = pack(route(location))
+                if results.n > 0 then break end
+            end
+        end
     end
-    local routes = self.routes[method]
-    for _, route in ipairs(routes) do
-        results = pack(route(location))
-        if results.n > 0 then break end
-    end
-    local after = self.filters.after
-    for _, filter in ipairs(after[method]) do
-        filter(location)
-    end
-    for _, filter in ipairs(after) do
-        filter(location)
+    if filters then
+        local after = filters.after
+        if after then
+            local am = after[method]
+            if am then
+                for _, filter in ipairs(am) do
+                    filter(location)
+                end
+            end
+            for _, filter in ipairs(after) do
+                filter(location)
+            end
+        end
     end
     return unpack(results, 1, results.n)
+end
+function route:dispatch()
+    return self:to(var.uri, verbs[var.request_method])
 end
 return route

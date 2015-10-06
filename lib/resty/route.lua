@@ -1,5 +1,4 @@
 local setmetatable = setmetatable
-local getmetatable = getmetatable
 local setfenv = setfenv
 local getfenv = getfenv
 local select = select
@@ -126,7 +125,7 @@ function route:filter(pattern, phase)
     else
         local f = tofunction(e, pattern, phase)
         c[#c+1] = function(location)
-            return filter(self, location, pattern, f)
+            return filter(self, location, nil, f)
         end
     end
     return self

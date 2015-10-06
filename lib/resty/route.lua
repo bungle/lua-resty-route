@@ -49,22 +49,24 @@ local function tofunction(e, f, m)
     return nil
 end
 local function filter(route, location, pattern, self)
+    local match = route.matcher
     if pattern then
         return (function(...)
             if select(1, ...) then
                 return true, self(...)
             end
-        end)(route:match(location, pattern))
+        end)(match(location, pattern))
     else
         return true, self()
     end
 end
 local function router(route, location, pattern, self)
+    local match = route.matcher
     return (function(...)
         if select(1, ...) then
             return true, self(...)
         end
-    end)(route:match(location, pattern))
+    end)(match(location, pattern))
 end
 local route = {}
 route.__index = route

@@ -4,6 +4,7 @@ local concat = table.concat
 local find = string.find
 local sub = string.sub
 local tonumber = tonumber
+local unescape = ngx.unescape_uri
 return function(location, pattern)
     local i, c, p, j = 1, {}, {}, 0
     local s = find(pattern, ":", 1, true)
@@ -17,7 +18,7 @@ return function(location, pattern)
         elseif x == ":string" then
             p[#p+1] = [[([^/]+)]]
             s, j = s + 7, j + 1
-            c[j] = false
+            c[j] = unescape
         end
         i = s
         s = find(pattern, ":", s + 1, true)
@@ -30,9 +31,7 @@ return function(location, pattern)
     if m then
         if m[1] then
             for i = 1, j do
-                if c[i] then
-                    m[i] = c[i](m[i])
-                end
+                m[i] = c[i](m[i])
             end
             return unpack(m)
         end

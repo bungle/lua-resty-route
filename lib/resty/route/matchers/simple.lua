@@ -26,7 +26,6 @@ return function(location, pattern)
         p[#p+1] = sub(pattern, i)
         pattern = concat(p)
     end
-    print(pattern)
     local m = match(location, concat{ pattern, "$" }, "aijosu")
     if m then
         if m[1] then

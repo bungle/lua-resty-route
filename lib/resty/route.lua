@@ -72,21 +72,23 @@ end
 local route = {}
 route.__index = route
 function route.new(opts)
-    local m, t = ngx and "ngx" or "match", type(opts)
+    local m, t = "simple", type(opts)
     if t == "table" then
         if opts.matcher then m = opts.matcher end
     end
-    local self = setmetatable({
-        matcher = require("resty.route.matchers." .. m)
-    }, route)
+    local self = setmetatable({}, route)
     self.context = { route = self }
+    if m then
+        self:with(m)
+    end
     return self
 end
 function route:with(matcher)
     if not matchers[matcher] then
         matchers[matcher] = require("resty.route.matchers." .. matcher)
     end
-    return matchers[matcher]
+    self.matcher = matchers[matcher]
+    return self
 end
 function route:match(location, pattern)
     return self.matcher(location, pattern)

@@ -69,6 +69,19 @@ local function router(route, location, pattern, self)
         end
     end)(match(location, pattern))
 end
+local function runfilters(location, method, filters)
+    if filters then
+        for _, filter in ipairs(filters) do
+            filter(location)
+        end
+        local mfilters = filters[method]
+        if mfilters then
+            for _, filter in ipairs(mfilters) do
+                filter(location)
+            end
+        end
+    end
+end
 local route = {}
 route.__index = route
 function route.new(opts)
@@ -195,16 +208,22 @@ for _, v in pairs(verbs) do
         return self(pattern, v, func)
     end
 end
-function route:exit(status)
-    -- TODO: should after filters be executed?
+function route:exit(status, noaf)
+    if not noaf then
+        runfilters(self.location, self.method, self.filters and self.filters.after)
+    end
     return exit(status)
 end
-function route:exec(uri, args)
-    -- TODO: should after filters be executed?
+function route:exec(uri, args, noaf)
+    if not noaf then
+        runfilters(self.location, self.method, self.filters and self.filters.after)
+    end
     return exec(uri, args)
 end
-function route:redirect(uri, status)
-    -- TODO: should after filters be executed?
+function route:redirect(uri, status, noaf)
+    if not noaf then
+        runfilters(self.location, self.method, self.filters and self.filters.after)
+    end
     return redirect(uri, status)
 end
 function route:websocket()
@@ -215,22 +234,10 @@ function route:notfound()
 end
 function route:to(location, method)
     method = method or "get"
+    self.location = location
+    self.method = method
     local results
-    local filters = self.filters
-    if filters then
-        if filters.before then
-            local before = filters.before
-            for _, filter in ipairs(before) do
-                filter(location)
-            end
-            local bm = before[method]
-            if bm then
-                for _, filter in ipairs(bm) do
-                    filter(location)
-                end
-            end
-        end
-    end
+    runfilters(location, method, self.filters and self.filters.before)
     local routes = self.routes
     if routes then
         routes = routes[method]
@@ -241,20 +248,7 @@ function route:to(location, method)
             end
         end
     end
-    if filters then
-        local after = filters.after
-        if after then
-            local am = after[method]
-            if am then
-                for _, filter in ipairs(am) do
-                    filter(location)
-                end
-            end
-            for _, filter in ipairs(after) do
-                filter(location)
-            end
-        end
-    end
+    runfilters(location, method, self.filters and self.filters.after)
     return unpack(results, 1, results.n)
 end
 function route:dispatch()

@@ -12,6 +12,7 @@ local var = ngx.var
 local redirect = ngx.redirect
 local exit = ngx.exit
 local exec = ngx.exec
+local matchers = {}
 if not pack then
     pack = function(...)
         return { n = select("#", ...), ...}
@@ -80,6 +81,12 @@ function route.new(opts)
     }, route)
     self.context = { route = self }
     return self
+end
+function route:with(matcher)
+    if not matchers[matcher] then
+        matchers[matcher] = require("resty.route.matchers." .. matcher)
+    end
+    return matchers[matcher]
 end
 function route:match(location, pattern)
     return self.matcher(location, pattern)

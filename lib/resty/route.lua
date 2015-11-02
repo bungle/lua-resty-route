@@ -186,8 +186,15 @@ function route:__call(pattern, method, func)
         end
         local c = c[method]
         local f = tofunction(e, func, method)
-        c[#c+1] = function(location)
-            return method == "websocket" and websocket(self, location, pattern, f) or router(self, location, pattern, f)
+        if method == "websocket" then
+            c[#c+1] = function(location)
+                return websocket(self, location, pattern, f)
+
+            end
+        else
+            c[#c+1] = function(location)
+                return router(self, location, pattern, f)
+            end
         end
         return self
     else
@@ -199,8 +206,14 @@ function route:__call(pattern, method, func)
                     end
                     local c = c[method]
                     local f = tofunction(e, routes)
-                    c[#c+1] = function(location)
-                        return method == "websocket" and websocket(self, location, pattern, f) or router(self, location, pattern, f)
+                    if method == "websocket" then
+                        c[#c+1] = function(location)
+                            return websocket(self, location, pattern, f)
+                        end
+                    else
+                        c[#c+1] = function(location)
+                            return router(self, location, pattern, f)
+                        end
                     end
                 else
                     for method, func in pairs(routes) do
@@ -209,8 +222,14 @@ function route:__call(pattern, method, func)
                         end
                         local c = c[method]
                         local f = tofunction(e, func, method)
-                        c[#c+1] = function(location)
-                            return method == "websocket" and websocket(self, location, pattern, f) or router(self, location, pattern, f)
+                        if method == "websocket" then
+                            c[#c+1] = function(location)
+                                return websocket(self, location, pattern, f)
+                            end
+                        else
+                            c[#c+1] = function(location)
+                                return router(self, location, pattern, f)
+                            end
                         end
                     end
                 end
@@ -220,8 +239,14 @@ function route:__call(pattern, method, func)
                 end
                 local c = c[method]
                 local f = tofunction(e, routes, method)
-                c[#c+1] = function(location)
-                    return method == "websocket" and websocket(self, location, pattern, f) or router(self, location, pattern, f)
+                if method == "websocket" then
+                    c[#c+1] = function(location)
+                        return websocket(self, location, pattern, f)
+                    end
+                else
+                    c[#c+1] = function(location)
+                        return router(self, location, pattern, f)
+                    end
                 end
             end
             return self

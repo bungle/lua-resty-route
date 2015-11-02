@@ -9,7 +9,6 @@ local pairs = pairs
 local type = type
 local unpack = table.unpack or unpack
 local pack = table.pack
-local sub = string.sub
 local ngx = ngx
 local var = ngx.var
 local log = ngx.log
@@ -234,6 +233,12 @@ for _, v in pairs(verbs) do
         return self(pattern, v, func)
     end
 end
+function route:terminate(noaf)
+    if not noaf then
+        runfilters(self.location, self.method, self.filters and self.filters.after)
+    end
+    return ngx.exit(ngx_ok)
+end
 function route:exit(status, noaf)
     self:terminate(noaf)
     return exit(status)
@@ -247,25 +252,19 @@ function route:redirect(uri, status, noaf)
     return redirect(uri, status)
 end
 function route:forbidden(noaf)
-    route:exit(http_forbidden, noaf)
+    return self:exit(http_forbidden, noaf)
 end
 function route:ok(noaf)
-    route:exit(http_ok, noaf)
+    return self:exit(http_ok, noaf)
 end
 function route:error(error, noaf)
     if error then
         log(ngx_err, error)
     end
-    route:exit(http_error, noaf)
+    return self:exit(http_error, noaf)
 end
 function route:notfound(noaf)
-    route:exit(http_not_found, noaf)
-end
-function route:terminate(noaf)
-    if not noaf then
-        runfilters(self.location, self.method, self.filters and self.filters.after)
-    end
-    ngx.exit(ngx_ok)
+    return self:exit(http_not_found, noaf)
 end
 function route:to(location, method)
     method = method or "get"
@@ -285,7 +284,7 @@ function route:to(location, method)
         end
     end
 end
-function route:dispatch(location, method)
+function route:dispatch()
     local location, method = var.uri, verbs[var.http_upgrade == "websocket" and "websocket" or var.request_method]
     runfilters(location, method, self.filters and self.filters.before)
     return self:to(location, method) and self:ok() or self:notfound()

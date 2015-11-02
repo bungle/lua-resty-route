@@ -8,16 +8,18 @@ local kill         = ngx.thread.kill
 local spawn        = ngx.thread.spawn
 local sub          = string.sub
 local ipairs       = ipairs
-
+local select       = select
 local mt, handler = {}, {}
 function mt:__call(self, route, ...)
     local self = setmetatable(self, handler)
+    self.n = select("#", ...)
+    self.args = { ... }
     self.route = route
     self:upgrade()
     local websocket, e = server:new{
-        max_payload_len = 65535,
-        send_masked     = false,
-        timeout         = 10000
+        max_payload_len = self.max_payload_len,
+        send_masked     = self.send_masked,
+        timeout         = self.timeout
     }
     if not websocket then route:error(e) end
     self.websocket = websocket
@@ -48,14 +50,10 @@ function handler:upgrade()
         return self:forbidden()
     end
 end
-function handler:connect()
-end
-function handler:continuation()
-end
-function handler:text()
-end
-function handler:binary()
-end
+function handler:connect() end
+function handler:continuation() end
+function handler:text() end
+function handler:binary() end
 function handler:close()
     local threads = self.threads
     if threads then
@@ -69,7 +67,7 @@ function handler:close()
         if not b and self.websocket.fatal then
             return self:error(e)
         else
-            return self.websocket.fatal and self:error(b or "unknown error") or self.route:terminate()
+            return self.websocket.fatal and self:error(e) or self.route:terminate()
         end
     end
 end

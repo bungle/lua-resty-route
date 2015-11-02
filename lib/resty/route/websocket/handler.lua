@@ -33,7 +33,7 @@ function mt:__call(self, route, ...)
         end
         d, t, err = websocket:recv_frame()
     end
-    --return route:error(err)
+    self:close()
 end
 
 handler.__index = handler
@@ -59,19 +59,28 @@ function handler:close()
         end
     end
     local b, e = self.websocket:send_close()
-    return b and self.route:ok() or self.route:error(e)
+    if not b and self.websocket.fatal then
+        return self.route:error(e)
+    else
+        return self.websocket.fatal and self.route:error("unknown error") or self.route:terminate()
+    end
+
 end
 
 function handler:ping()
     local b, e = self.websocket:send_pong()
-    if not b then return self.route:error(e) end
+    if not b and self.websocket.fatal then
+        if not b then return self.route:error(e) end
+    end
 end
 
 function handler:pong() end
 function handler:unknown() end
 function handler:send(text)
     local b, e = self.websocket:send_text(text)
-    if not b then return self.route:error(e) end
+    if not b and self.websocket.fatal then
+        if not b then return self.route:error(e) end
+    end
 end
 function handler:spawn(...)
     if not self.threads then

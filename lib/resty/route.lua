@@ -16,7 +16,8 @@ local log = ngx.log
 local redirect = ngx.redirect
 local exit = ngx.exit
 local exec = ngx.exec
-local log_err = ngx.ERR
+local ngx_ok = ngx.OK
+local ngx_err = ngx.ERR
 local http_ok = ngx.HTTP_OK
 local http_error = ngx.HTTP_INTERNAL_SERVER_ERROR
 local http_forbidden = ngx.HTTP_FORBIDDEN
@@ -252,7 +253,9 @@ function route:ok(noaf)
     route:exit(http_ok, noaf)
 end
 function route:error(error, noaf)
-    log(log_err, error)
+    if error then
+        log(ngx_err, error)
+    end
     route:exit(http_error, noaf)
 end
 function route:notfound(noaf)
@@ -262,6 +265,7 @@ function route:terminate(noaf)
     if not noaf then
         runfilters(self.location, self.method, self.filters and self.filters.after)
     end
+    ngx.exit(ngx_ok)
 end
 function route:to(location, method)
     method = method or "get"

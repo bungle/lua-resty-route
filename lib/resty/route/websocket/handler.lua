@@ -16,11 +16,7 @@ function mt:__call(self, route, ...)
     self.args = { ... }
     self.route = route
     self:upgrade()
-    local websocket, e = server:new{
-        max_payload_len = self.max_payload_len,
-        send_masked     = self.send_masked,
-        timeout         = self.timeout
-    }
+    local websocket, e = server:new(self)
     if not websocket then route:error(e) end
     self.websocket = websocket
     abort(self.abort(self))

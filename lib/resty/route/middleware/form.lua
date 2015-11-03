@@ -118,10 +118,7 @@ return function(route)
                                     pst.n = pst.n + 1
                                     pst[pst.n] = data
                                 else
-                                    pst = {
-                                        pst,
-                                        data
-                                    }
+                                    pst = { pst, data }
                                     pst.n = 2
                                 end
                                 post[n] = pst

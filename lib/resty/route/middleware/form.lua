@@ -6,8 +6,6 @@ local find = string.find
 local open = io.open
 local var = ngx.var
 
-local encode = require "cjson.safe".encode
-
 local function parse(s)
     if not s then return nil end
     local r = {}
@@ -80,10 +78,7 @@ return function(route)
                                                 fls.n = fls.n + 1
                                                 fls[fls.n] = data
                                             else
-                                                fls = {
-                                                    fls,
-                                                    data
-                                                }
+                                                fls = { fls, data }
                                                 fls.n = 2
                                             end
                                         else
@@ -92,9 +87,11 @@ return function(route)
                                     else
                                         files[#files+1] = data
                                     end
-                                    f = open(data.tmpname, "w+")
+                                    f, e = open(data.tmpname, "w+")
                                     if f then
                                         f:setvbuf("full", chunk)
+                                    else
+                                        return route:error(e)
                                     end
                                 end
                             else
@@ -104,7 +101,10 @@ return function(route)
                         h = nil
                     end
                     if f then
-                        f:write(r)
+                        f, e = f:write(r)
+                        if not f then
+                            return route:error(e)
+                        end
                     elseif p then
                         p[#p+1] = r
                     end

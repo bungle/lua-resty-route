@@ -254,22 +254,22 @@ for _, v in pairs(verbs) do
         return self(pattern, v, func)
     end
 end
-function route:terminate(noaf)
+function route:exit(status, noaf)
     if not noaf then
         runfilters(self.location, self.method, self.filters and self.filters.after)
     end
-    return ngx.exit(ngx_ok)
-end
-function route:exit(status, noaf)
-    self:terminate(noaf)
-    return exit(status)
+    return ngx.headers_sent and exit(ngx_ok) or exit(status or ngx_ok)
 end
 function route:exec(uri, args, noaf)
-    self:terminate(noaf)
+    if not noaf then
+        runfilters(self.location, self.method, self.filters and self.filters.after)
+    end
     return exec(uri, args)
 end
 function route:redirect(uri, status, noaf)
-    self:terminate(noaf)
+    if not noaf then
+        runfilters(self.location, self.method, self.filters and self.filters.after)
+    end
     return redirect(uri, status)
 end
 function route:forbidden(noaf)

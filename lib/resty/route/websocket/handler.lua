@@ -63,7 +63,7 @@ function handler:close()
         if not b and self.websocket.fatal then
             return self:error(e)
         else
-            return self.websocket.fatal and self:error(e) or self.route:terminate()
+            return self.websocket.fatal and self:error(e) or self.route:exit()
         end
     end
 end
@@ -83,7 +83,7 @@ function handler:error(message)
         if not d and self.websocket.fatal then
             return self.route:error(message or e)
         else
-            return self.websocket.fatal and self.route:error(message or e) or self.route:terminate()
+            return self.websocket.fatal and self.route:error(message or e) or self.route:exit()
         end
     end
 end

@@ -43,20 +43,17 @@ return function(route)
         local files = {}
         if sub(ct, 1, 20) == "multipart/form-data;" then
             local chunk   = options.chunk_size or 8192
-            local form = upload:new(chunk)
+            local form, e = upload:new(chunk)
+            if not form then return route:error(e) end
             local n, f, h, p
             form:set_timeout(options.timeout or 1000)
             while true do
                 local t, r, e = form:read()
-                if not t then
-                    return route:error(e)
-                end
+                if not t then return route:error(e) end
                 if t == "header" then
                     if not h then h = {} end
                     local k, v = r[1], parse(r[2])
-                    if v then
-                        h[k] = v
-                    end
+                    if v then h[k] = v end
                 elseif t == "body" then
                     if h then
                         local d = h["Content-Disposition"]
@@ -81,6 +78,7 @@ return function(route)
                                                 fls = { fls, data }
                                                 fls.n = 2
                                             end
+                                            files[n] = fls
                                         else
                                             files[n] = data
                                         end
@@ -101,10 +99,8 @@ return function(route)
                         h = nil
                     end
                     if f then
-                        f, e = f:write(r)
-                        if not f then
-                            return route:error(e)
-                        end
+                        local ok, e = f:write(r)
+                        if not ok then return route:error(e) end
                     elseif p then
                         p[#p+1] = r
                     end
@@ -128,6 +124,7 @@ return function(route)
                                     }
                                     pst.n = 2
                                 end
+                                post[n] = pst
                             else
                                 post[n] = data
                             end
@@ -141,9 +138,7 @@ return function(route)
                 end
             end
             local t, r, e = form:read()
-            if not t then
-                return route:error(e)
-            end
+            if not t then return route:error(e) end
         end
         route.context.post  = post
         route.context.files = files

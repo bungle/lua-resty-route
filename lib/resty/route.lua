@@ -1,8 +1,6 @@
 local require = require
 local handler = require "resty.route.websocket.handler"
 local setmetatable = setmetatable
-local setfenv = setfenv
-local getfenv = getfenv
 local select = select
 local ipairs = ipairs
 local pairs = pairs
@@ -15,6 +13,7 @@ local log = ngx.log
 local redirect = ngx.redirect
 local exit = ngx.exit
 local exec = ngx.exec
+local print = ngx.pring
 local ngx_ok = ngx.OK
 local ngx_err = ngx.ERR
 local http_ok = ngx.HTTP_OK
@@ -43,18 +42,18 @@ local verbs = {}
 for k, v in pairs(methods) do
     verbs[v] = k
 end
-local function tofunction(e, f, m)
+local function tofunction(f, m)
     local t = type(f)
     if t == "function" then
-        return e and setfenv(f, setmetatable(e, { __index = getfenv(f) })) or f
+        return f
     elseif t == "table" then
         if m then
-            return tofunction(e, f[m])
+            return tofunction(f[m])
         else
             return f
         end
     elseif t == "string" then
-        return tofunction(e, require(f), m)
+        return tofunction(require(f), m)
     end
     return nil
 end
@@ -70,7 +69,7 @@ local function router(route, location, pattern, self)
     local match = route.matcher
     return (function(...)
         if select(1, ...) then
-            return true, self(...)
+            return true, self(route, ...)
         end
     end)(match(location, pattern))
 end
@@ -109,9 +108,8 @@ function route.new(opts)
     end
     return self
 end
-function route:use(middleware, ...)
-    require("resty.route.middleware." .. middleware)(...)
-    return self
+function route:use(middleware)
+    return tofunction("resty.route.middleware." .. middleware)(self)
 end
 function route:with(matcher)
     self.matcher = require("resty.route.matchers." .. matcher)
@@ -121,7 +119,6 @@ function route:match(location, pattern)
     return self.matcher(location, pattern)
 end
 function route:filter(pattern, phase)
-    local e = self.context
     if not self.filters then
         self.filters = {}
     end
@@ -141,13 +138,13 @@ function route:filter(pattern, phase)
         return function(filters)
             if type(filters) == "table" then
                 for _, func in ipairs(filters) do
-                    local f = tofunction(e, func, phase)
+                    local f = tofunction(func, phase)
                     c[#c+1] = function(location)
                         return filter(self, location, pattern, f)
                     end
                 end
             else
-                local f = tofunction(e, filters, phase)
+                local f = tofunction(filters, phase)
                 c[#c+1] = function(location)
                     return filter(self, location, pattern, f)
                 end
@@ -155,13 +152,13 @@ function route:filter(pattern, phase)
         end
     elseif t == "table" then
         for _, func in ipairs(pattern) do
-            local f = tofunction(e, func, phase)
+            local f = tofunction(func, phase)
             c[#c+1] = function(location)
                 return filter(self, location, nil, f)
             end
         end
     else
-        local f = tofunction(e, pattern, phase)
+        local f = tofunction(pattern, phase)
         c[#c+1] = function(location)
             return filter(self, location, nil, f)
         end
@@ -175,7 +172,6 @@ function route:after(pattern)
     return self:filter(pattern, "after")
 end
 function route:__call(pattern, method, func)
-    local e = self.context
     if not self.routes then
         self.routes = {}
     end
@@ -185,7 +181,7 @@ function route:__call(pattern, method, func)
             c[method] = {}
         end
         local c = c[method]
-        local f = tofunction(e, func, method)
+        local f = tofunction(func, method)
         if method == "websocket" then
             c[#c+1] = function(location)
                 return websocket(self, location, pattern, f)
@@ -205,7 +201,7 @@ function route:__call(pattern, method, func)
                         c[method] = {}
                     end
                     local c = c[method]
-                    local f = tofunction(e, routes)
+                    local f = tofunction(routes)
                     if method == "websocket" then
                         c[#c+1] = function(location)
                             return websocket(self, location, pattern, f)
@@ -221,7 +217,7 @@ function route:__call(pattern, method, func)
                             c[method] = {}
                         end
                         local c = c[method]
-                        local f = tofunction(e, func, method)
+                        local f = tofunction(func, method)
                         if method == "websocket" then
                             c[#c+1] = function(location)
                                 return websocket(self, location, pattern, f)
@@ -238,7 +234,7 @@ function route:__call(pattern, method, func)
                     c[method] = {}
                 end
                 local c = c[method]
-                local f = tofunction(e, routes, method)
+                local f = tofunction(routes, method)
                 if method == "websocket" then
                     c[#c+1] = function(location)
                         return websocket(self, location, pattern, f)
@@ -308,6 +304,10 @@ function route:to(location, method)
             end
         end
     end
+end
+function route:render(content)
+    local template = self.context.template
+    return template and template.render(content, self.context) or print(content)
 end
 function route:dispatch()
     local location, method = var.uri, verbs[var.http_upgrade == "websocket" and "websocket" or var.request_method]

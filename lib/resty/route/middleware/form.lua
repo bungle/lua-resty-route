@@ -6,6 +6,16 @@ local find = string.find
 local open = io.open
 local var = ngx.var
 
+local function kv(r, s)
+    if s == "formdata" then return end
+    local e = find(s, "=", 1, true)
+    if e then
+        r[sub(s, 2, e - 1)] = sub(s, e + 2, #s - 1)
+    else
+        r[#r+1] = s
+    end
+end
+
 local function parse(s)
     if not s then return nil end
     local r = {}
@@ -13,24 +23,12 @@ local function parse(s)
     local b = find(s, ";", 1, true)
     while b do
         local p = sub(s, i, b - 1)
-        local e = find(p, "=", 1, true)
-        if e then
-            r[sub(p, 2, e - 1)] = sub(p, e + 2, #p - 1)
-        else
-            r[#r+1] = p
-        end
+        kv(r, p)
         i = b + 1
         b = find(s, ";", i, true)
     end
     local p = sub(s, i)
-    if p ~= "" then
-        local e = find(p, "=", 1, true)
-        if e then
-            r[sub(p, 2, e - 1)] = sub(p, e + 2, #p - 1)
-        else
-            r[#r+1] = p
-        end
-    end
+    if p ~= "" then kv(r, p) end
     return r
 end
 
@@ -39,17 +37,17 @@ return function(route)
         options = options or {}
         local ct = var.http_content_type
         if ct == nil then return end
-        local post = {}
-        local files = {}
-        if sub(ct, 1, 20) == "multipart/form-data;" then
+        local post = { n = 0 }
+        local files = { n = 0 }
+        if sub(ct, 1, 19) == "multipart/form-data" then
             local chunk   = options.chunk_size or 8192
             local form, e = upload:new(chunk)
-            if not form then return route:error(e) end
-            local n, f, h, p
+            if not form then return nil, e end
+            local h, p, f, o
             form:set_timeout(options.timeout or 1000)
             while true do
                 local t, r, e = form:read()
-                if not t then return route:error(e) end
+                if not t then return nil, e end
                 if t == "header" then
                     if not h then h = {} end
                     local k, v = r[1], parse(r[2])
@@ -58,84 +56,68 @@ return function(route)
                     if h then
                         local d = h["Content-Disposition"]
                         if d then
-                            n = d.name
-                            local file = d.filename
-                            if file then
-                                if file ~= "" then
-                                    local type = h["Content-Type"]
-                                    local data = {
-                                        name = file,
-                                        tmpname = tmpname(),
-                                        type = type and type[1]
-                                    }
-                                    if n then
-                                        local fls = files[n]
-                                        if fls then
-                                            if fls.n then
-                                                fls.n = fls.n + 1
-                                                fls[fls.n] = data
-                                            else
-                                                fls = { fls, data }
-                                                fls.n = 2
-                                            end
-                                            files[n] = fls
-                                        else
-                                            files[n] = data
-                                        end
-                                    else
-                                        files[#files+1] = data
-                                    end
-                                    f, e = open(data.tmpname, "w+")
-                                    if f then
-                                        f:setvbuf("full", chunk)
-                                    else
-                                        return route:error(e)
-                                    end
-                                end
+                            if d.filename then
+                                f = {
+                                    name = d.name,
+                                    type = h["Content-Type"] and h["Content-Type"][1],
+                                    tmpname = tmpname()
+                                }
+                                o, e = open(f.tmpname, "w+")
+                                if not o then return nil, e end
+                                o:setvbuf("full", chunk)
                             else
-                                p = {}
+                                p = { name = d.name, data = { n = 1 } }
                             end
                         end
                         h = nil
                     end
-                    if f then
-                        local ok, e = f:write(r)
-                        if not ok then return route:error(e) end
+                    if o then
+                        local ok, e = o:write(r)
+                        if not ok then return nil, e end
                     elseif p then
-                        p[#p+1] = r
+                        local n = p.data.n
+                        p.data[n] = r
+                        p.data.n = n + 1
                     end
                 elseif t == "part_end" then
+                    if o then
+                        f.size = o:seek()
+                        o:close()
+                        o = nil
+                    end
+                    local c, d
                     if f then
-                        f:flush()
-                        f:close()
-                        f = nil
+                        c, d, f = files, f, nil
                     elseif p then
-                        local data = concat(p)
+                        c, d, p = post, p, nil
+                    end
+                    if c then
+                        local n = d.name
+                        local s = d.data and concat(d.data) or d
                         if n then
-                            local pst = post[n]
-                            if pst then
-                                if pst.n then
-                                    pst.n = pst.n + 1
-                                    pst[pst.n] = data
+                            local z = c[n]
+                            if z then
+                                if z.n then
+                                    z.n = z.n + 1
+                                    z[z.n] = s
                                 else
-                                    pst = { pst, data }
-                                    pst.n = 2
+                                    z = { z, s }
+                                    z.n = 2
                                 end
-                                post[n] = pst
                             else
-                                post[n] = data
+                                c[n] = s
                             end
                         else
-                            post[#post+1] = data
+                            c[c.n+1] = s
+                            c.n = c.n + 1
                         end
-                        p = nil
                     end
                 elseif t == "eof" then
                     break
                 end
             end
             local t, r, e = form:read()
-            if not t then return route:error(e) end
+            if not t then return nil, e end
         end
         route.context.post  = post
         route.context.files = files

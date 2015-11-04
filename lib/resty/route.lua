@@ -77,7 +77,7 @@ local function filter(route, location, pattern, self)
     if pattern then
         return router(route, location, pattern, self)
     else
-        return true, self()
+        return true, self(route)
     end
 end
 local function runfilters(location, method, filters)

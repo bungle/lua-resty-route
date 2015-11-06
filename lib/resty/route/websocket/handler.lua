@@ -1,3 +1,4 @@
+local require      = require
 local server       = require "resty.websocket.server"
 local setmetatable = setmetatable
 local ngx          = ngx
@@ -15,6 +16,7 @@ function mt:__call(self, route, ...)
     self.n = select("#", ...)
     self.args = { ... }
     self.route = route
+    self.context = route.context
     self:upgrade()
     local websocket, e = server:new(self)
     if not websocket then route:error(e) end

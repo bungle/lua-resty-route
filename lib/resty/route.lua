@@ -1,4 +1,5 @@
 local require = require
+local encode = require "cjson.safe".encode
 local handler = require "resty.route.websocket.handler"
 local setmetatable = setmetatable
 local select = select
@@ -11,9 +12,10 @@ local ngx = ngx
 local var = ngx.var
 local log = ngx.log
 local redirect = ngx.redirect
+local header = ngx.header
 local exit = ngx.exit
 local exec = ngx.exec
-local print = ngx.pring
+local print = ngx.print
 local ngx_ok = ngx.OK
 local ngx_err = ngx.ERR
 local http_ok = ngx.HTTP_OK
@@ -307,7 +309,20 @@ function route:to(location, method)
 end
 function route:render(content)
     local template = self.context.template
-    return template and template.render(content, self.context) or print(content)
+    if template then
+        template.render(content, self.context)
+    else
+        print(content)
+    end
+    self:ok()
+end
+function route:json(data)
+    if type(data) == "table" then
+        data = encode(data)
+    end
+    header.content_type = "application/json"
+    print(data)
+    self:ok();
 end
 function route:dispatch()
     local location, method = var.uri, verbs[var.http_upgrade == "websocket" and "websocket" or var.request_method]

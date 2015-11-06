@@ -10,7 +10,8 @@ local spawn        = ngx.thread.spawn
 local sub          = string.sub
 local ipairs       = ipairs
 local select       = select
-local mt, handler = {}, {}
+local mt, handler  = {}, {}
+local noop         = function() end
 function mt:__call(self, route, ...)
     local self = setmetatable(self, handler)
     self.n = select("#", ...)
@@ -27,10 +28,7 @@ function mt:__call(self, route, ...)
     local d, t = websocket:recv_frame()
     while not websocket.fatal do
         if not d then
-            d, e = self.websocket:send_ping()
-            if websocket.fatal then
-                self:error(e)
-            end
+            self:timeout()
         else
             if not t then t = "unknown" end
             if self[t] then self[t](self, d) end
@@ -49,10 +47,21 @@ function handler:upgrade()
     end
 end
 function handler:connect() end
+function handler:timeout()
+    local websocket = self.websocket
+    local _, e = websocket:send_ping()
+    if websocket.fatal then
+        self:error(e)
+    end
+end
 function handler:continuation() end
 function handler:text() end
 function handler:binary() end
+function handler:closign() end
+function handler:closed() end
 function handler:close()
+    self.close = noop
+    self:closing();
     local threads = self.threads
     if threads then
         for _, v in ipairs(self.threads) do
@@ -68,6 +77,7 @@ function handler:close()
             return self.websocket.fatal and self:error(e) or self.route:exit()
         end
     end
+    self:closed();
 end
 function handler:forbidden()
     return self.route:forbidden()

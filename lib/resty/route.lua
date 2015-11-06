@@ -307,10 +307,10 @@ function route:to(location, method)
         end
     end
 end
-function route:render(content)
+function route:render(content, context)
     local template = self.context.template
     if template then
-        template.render(content, self.context)
+        template.render(content, context or self.context)
     else
         print(content)
     end

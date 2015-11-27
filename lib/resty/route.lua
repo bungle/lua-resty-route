@@ -183,15 +183,14 @@ function route:__call(pattern, method, func)
             c[method] = {}
         end
         local c = c[method]
-        local f = tofunction(func, method)
         if method == "websocket" then
             c[#c+1] = function(location)
-                return websocket(self, location, pattern, f)
+                return websocket(self, location, pattern, tofunction(func))
 
             end
         else
             c[#c+1] = function(location)
-                return router(self, location, pattern, f)
+                return router(self, location, pattern, tofunction(func, method))
             end
         end
         return self
@@ -219,14 +218,13 @@ function route:__call(pattern, method, func)
                             c[method] = {}
                         end
                         local c = c[method]
-                        local f = tofunction(func, method)
                         if method == "websocket" then
                             c[#c+1] = function(location)
-                                return websocket(self, location, pattern, f)
+                                return websocket(self, location, pattern, tofunction(func))
                             end
                         else
                             c[#c+1] = function(location)
-                                return router(self, location, pattern, f)
+                                return router(self, location, pattern, tofunction(func, method))
                             end
                         end
                     end
@@ -236,14 +234,13 @@ function route:__call(pattern, method, func)
                     c[method] = {}
                 end
                 local c = c[method]
-                local f = tofunction(routes, method)
                 if method == "websocket" then
                     c[#c+1] = function(location)
-                        return websocket(self, location, pattern, f)
+                        return websocket(self, location, pattern, tofunction(routes))
                     end
                 else
                     c[#c+1] = function(location)
-                        return router(self, location, pattern, f)
+                        return router(self, location, pattern, tofunction(routes, method))
                     end
                 end
             end

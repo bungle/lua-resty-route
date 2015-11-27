@@ -140,29 +140,25 @@ function route:filter(pattern, phase)
         return function(filters)
             if type(filters) == "table" then
                 for _, func in ipairs(filters) do
-                    local f = tofunction(func, phase)
                     c[#c+1] = function(location)
-                        return filter(self, location, pattern, f)
+                        return filter(self, location, pattern, tofunction(func, phase))
                     end
                 end
             else
-                local f = tofunction(filters, phase)
                 c[#c+1] = function(location)
-                    return filter(self, location, pattern, f)
+                    return filter(self, location, pattern, tofunction(filters, phase))
                 end
             end
         end
     elseif t == "table" then
         for _, func in ipairs(pattern) do
-            local f = tofunction(func, phase)
             c[#c+1] = function(location)
-                return filter(self, location, nil, f)
+                return filter(self, location, nil, tofunction(func, phase))
             end
         end
     else
-        local f = tofunction(pattern, phase)
         c[#c+1] = function(location)
-            return filter(self, location, nil, f)
+            return filter(self, location, nil, tofunction(pattern, phase))
         end
     end
     return self

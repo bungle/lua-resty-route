@@ -1,5 +1,4 @@
 local match = string.match
-local concat = table.concat
 return function(location, pattern)
-    return match(location, concat{ "^", pattern, "$" })
+    return match(location, pattern)
 end

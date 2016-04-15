@@ -8,6 +8,7 @@ local pairs = pairs
 local type = type
 local unpack = table.unpack or unpack
 local pack = table.pack
+local sub = string.sub
 local ngx = ngx
 local var = ngx.var
 local log = ngx.log
@@ -22,6 +23,21 @@ local http_ok = ngx.HTTP_OK
 local http_error = ngx.HTTP_INTERNAL_SERVER_ERROR
 local http_forbidden = ngx.HTTP_FORBIDDEN
 local http_not_found = ngx.HTTP_NOT_FOUND
+local matchers = {
+    prefix = require "resty.route.matchers.prefix",
+    equals = require "resty.route.matchers.equals",
+    match  = require "resty.route.matchers.match",
+    regex  = require "resty.route.matchers.regex",
+    regexi = require "resty.route.matchers.regexi",
+    simple = require "resty.route.matchers.simple",
+}
+local selectors = {
+    ["="]  = matchers.equals,
+    ["#"]  = matchers.match,
+    ["~"]  = matchers.regex,
+    ["~*"] = matchers.regexi,
+    ["@"]  = matchers.simple,
+}
 if not pack then
     pack = function(...)
         return { n = select("#", ...), ... }
@@ -59,8 +75,15 @@ local function tofunction(f, m)
     end
     return nil
 end
+local function matcher(pattern)
+    local s = selectors[sub(pattern, 1, 2)]
+    if s then return s, sub(pattern, 3)  end
+    s = selectors[sub(pattern, 1, 1)]
+    if s then return s, sub(pattern, 2) end
+    return matchers.prefix, pattern
+end
 local function websocket(route, location, pattern, self)
-    local match = route.matcher
+    local match, pattern = matcher(pattern)
     return (function(...)
         if select(1, ...) then
             return true, handler(self, route, ...)
@@ -68,7 +91,7 @@ local function websocket(route, location, pattern, self)
     end)(match(location, pattern))
 end
 local function router(route, location, pattern, self)
-    local match = route.matcher
+    local match, pattern = matcher(pattern)
     return (function(...)
         if select(1, ...) then
             return true, self(route, ...)
@@ -97,28 +120,18 @@ local function runfilters(location, method, filters)
 end
 local route = {}
 route.__index = route
-function route.new(opts)
-    local m, t = "simple", type(opts)
-    if t == "table" then
-        if opts.matcher then m = opts.matcher end
-    end
+function route.new()
     local self = setmetatable({}, route)
     self.context = { route = self }
     self.context.context = self.context
-    if m then
-        self:with(m)
-    end
     return self
 end
 function route:use(middleware)
     return tofunction("resty.route.middleware." .. middleware)(self)
 end
-function route:with(matcher)
-    self.matcher = require("resty.route.matchers." .. matcher)
-    return self
-end
 function route:match(location, pattern)
-    return self.matcher(location, pattern)
+    local match, pattern = matcher(pattern)
+    return match(location, pattern)
 end
 function route:filter(pattern, phase)
     if not self.filters then

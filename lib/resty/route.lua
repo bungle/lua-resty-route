@@ -36,7 +36,7 @@ local selectors = {
     ["#"]  = matchers.match,
     ["~"]  = matchers.regex,
     ["~*"] = matchers.regexi,
-    ["@"]  = matchers.simple,
+    ["@"]  = matchers.simple
 }
 if not pack then
     pack = function(...)

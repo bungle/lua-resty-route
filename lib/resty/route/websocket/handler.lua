@@ -38,13 +38,17 @@ function mt:__call(self, route, ...)
     self:close()
 end
 handler.__index = handler
+function handler:upgrading() end
+function handler:upgraded() end
 function handler:upgrade()
+    self:upgrading();
     local host = var.host
     local s =  #var.scheme + 4
     local e = #host + s - 1
     if sub(var.http_origin or "", s, e) ~= host then
         return self:forbidden()
     end
+    self:upgraded();
 end
 function handler:connect() end
 function handler:timeout()

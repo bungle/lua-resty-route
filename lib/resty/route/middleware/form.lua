@@ -1,5 +1,5 @@
 local form = require "resty.validation".fields
 
-return function(route)
-    route.context.form = form
+return function(self)
+    self.form = form
 end

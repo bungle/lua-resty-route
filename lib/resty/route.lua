@@ -82,27 +82,27 @@ local function matcher(pattern)
     if s then return s, sub(pattern, 2) end
     return matchers.prefix, pattern
 end
-local function websocket(route, location, pattern, self)
+local function websocket(context, location, pattern, self)
     local match, pattern = matcher(pattern)
     return (function(...)
         if select(1, ...) then
-            return true, handler(self, route, ...)
+            return true, handler(self, context, ...)
         end
     end)(match(location, pattern))
 end
-local function router(route, location, pattern, self)
+local function router(context, location, pattern, self)
     local match, pattern = matcher(pattern)
     return (function(...)
         if select(1, ...) then
-            return true, self(route, ...)
+            return true, self(context, ...)
         end
     end)(match(location, pattern))
 end
-local function filter(route, location, pattern, self)
+local function filter(context, location, pattern, self)
     if pattern then
-        return router(route, location, pattern, self)
+        return router(context, location, pattern, self)
     else
-        return true, self(route)
+        return true, self(context)
     end
 end
 local function runfilters(location, method, filters)
@@ -127,13 +127,14 @@ function route.new()
     return self
 end
 function route:use(middleware)
-    return tofunction("resty.route.middleware." .. middleware)(self)
+    return tofunction("resty.route.middleware." .. middleware)(self.context)
 end
 function route:match(location, pattern)
     local match, pattern = matcher(pattern)
     return match(location, pattern)
 end
 function route:filter(pattern, phase)
+    local context = self.context
     if not self.filters then
         self.filters = {}
     end
@@ -154,24 +155,24 @@ function route:filter(pattern, phase)
             if type(filters) == "table" then
                 for _, func in ipairs(filters) do
                     c[#c+1] = function(location)
-                        return filter(self, location, pattern, tofunction(func, phase))
+                        return filter(context, location, pattern, tofunction(func, phase))
                     end
                 end
             else
                 c[#c+1] = function(location)
-                    return filter(self, location, pattern, tofunction(filters, phase))
+                    return filter(context, location, pattern, tofunction(filters, phase))
                 end
             end
         end
     elseif t == "table" then
         for _, func in ipairs(pattern) do
             c[#c+1] = function(location)
-                return filter(self, location, nil, tofunction(func, phase))
+                return filter(context, location, nil, tofunction(func, phase))
             end
         end
     else
         c[#c+1] = function(location)
-            return filter(self, location, nil, tofunction(pattern, phase))
+            return filter(context, location, nil, tofunction(pattern, phase))
         end
     end
     return self
@@ -183,6 +184,7 @@ function route:after(pattern)
     return self:filter(pattern, "after")
 end
 function route:__call(pattern, method, func)
+    local context = self.context
     if not self.routes then
         self.routes = {}
     end
@@ -194,12 +196,12 @@ function route:__call(pattern, method, func)
         local c = c[method]
         if method == "websocket" then
             c[#c+1] = function(location)
-                return websocket(self, location, pattern, tofunction(func))
+                return websocket(context, location, pattern, tofunction(func))
 
             end
         else
             c[#c+1] = function(location)
-                return router(self, location, pattern, tofunction(func, method))
+                return router(context, location, pattern, tofunction(func, method))
             end
         end
         return self
@@ -214,11 +216,11 @@ function route:__call(pattern, method, func)
                     local f = tofunction(routes)
                     if method == "websocket" then
                         c[#c+1] = function(location)
-                            return websocket(self, location, pattern, f)
+                            return websocket(context, location, pattern, f)
                         end
                     else
                         c[#c+1] = function(location)
-                            return router(self, location, pattern, f)
+                            return router(context, location, pattern, f)
                         end
                     end
                 else
@@ -229,11 +231,11 @@ function route:__call(pattern, method, func)
                         local c = c[method]
                         if method == "websocket" then
                             c[#c+1] = function(location)
-                                return websocket(self, location, pattern, tofunction(func))
+                                return websocket(context, location, pattern, tofunction(func))
                             end
                         else
                             c[#c+1] = function(location)
-                                return router(self, location, pattern, tofunction(func, method))
+                                return router(context, location, pattern, tofunction(func, method))
                             end
                         end
                     end
@@ -245,11 +247,11 @@ function route:__call(pattern, method, func)
                 local c = c[method]
                 if method == "websocket" then
                     c[#c+1] = function(location)
-                        return websocket(self, location, pattern, tofunction(routes))
+                        return websocket(context, location, pattern, tofunction(routes))
                     end
                 else
                     c[#c+1] = function(location)
-                        return router(self, location, pattern, tofunction(routes, method))
+                        return router(context, location, pattern, tofunction(routes, method))
                     end
                 end
             end

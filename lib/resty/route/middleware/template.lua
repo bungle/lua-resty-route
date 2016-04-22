@@ -1,3 +1,3 @@
-return function(route)
-    route.context.template = require "resty.template"
+return function(self)
+    self.template = require "resty.template"
 end

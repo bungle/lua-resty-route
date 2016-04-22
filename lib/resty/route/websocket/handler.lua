@@ -12,15 +12,15 @@ local ipairs       = ipairs
 local select       = select
 local mt, handler  = {}, {}
 local noop         = function() end
-function mt:__call(self, route, ...)
+function mt:__call(self, context, ...)
     local self = setmetatable(self, handler)
     self.n = select("#", ...)
     self.args = { ... }
-    self.route = route
-    self.context = route.context
+    self.context = context
+    self.route = context.route
     self:upgrade()
     local websocket, e = server:new(self)
-    if not websocket then route:error(e) end
+    if not websocket then self.route:error(e) end
     self.websocket = websocket
     abort(self.abort(self))
     self:connect()

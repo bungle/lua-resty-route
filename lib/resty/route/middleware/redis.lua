@@ -1,8 +1,8 @@
 local redis = require "resty.redis"
 
-return function(route)
-    local context = route.context
+return function(self)
     return function(options)
+        local route = self.route
         local r, e = redis:new()
         if not r then
             return route:error(e)
@@ -14,7 +14,7 @@ return function(route)
         if options.timeout then
             r:set_timeout(options.timeout)
         end
-        context[options.name or "redis"] = r
+        self[options.name or "redis"] = r
         route:after(function()
             if options.max_idle_timeout and options.pool_size then
                 r:set_keepalive(options.max_idle_timeout, options.pool_size)

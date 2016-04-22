@@ -2,8 +2,8 @@ local reqargs = require "resty.reqargs"
 local remove = os.remove
 local pairs = pairs
 
-local function cleanup(route)
-    local files = route.context.files
+local function cleanup(self)
+    local files = self.files
     for i = 1, files.n, 1 do
         local f = files[i]
         remove(f.temp)
@@ -21,13 +21,12 @@ local function cleanup(route)
     end
 end
 
-return function(route)
-    local context = route.context
+return function(self)
     return function(options)
         local get, post, files = reqargs(options)
-        route:after(cleanup)
-        context.get   = get
-        context.post  = post
-        context.files = files
+        self.route:after(cleanup)
+        self.get   = get
+        self.post  = post
+        self.files = files
     end
 end

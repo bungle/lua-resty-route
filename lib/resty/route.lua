@@ -54,6 +54,7 @@ local methods = {
     link      = "LINK",
     unlink    = "UNLINK",
     trace     = "TRACE",
+    connect   = "CONNECT",
     websocket = "websocket"
 }
 local verbs = {}

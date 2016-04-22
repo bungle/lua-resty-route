@@ -122,7 +122,7 @@ local route = {}
 route.__index = route
 function route.new()
     local self = setmetatable({}, route)
-    self.context = { route = self }
+    self.context = setmetatable({ route = self }, { __index = self })
     self.context.context = self.context
     return self
 end

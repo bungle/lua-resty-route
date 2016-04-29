@@ -39,8 +39,8 @@ function mt:__call(self, context, ...)
 end
 handler.__index = handler
 function handler:upgrading() end
-function handler:upgraded() end
 function handler:upgrade()
+    self.upgrade = noop
     self:upgrading();
     local host = var.host
     local s =  #var.scheme + 4
@@ -50,6 +50,7 @@ function handler:upgrade()
     end
     self:upgraded();
 end
+function handler:upgraded() end
 function handler:connect() end
 function handler:timeout()
     local websocket = self.websocket
@@ -62,7 +63,6 @@ function handler:continuation() end
 function handler:text() end
 function handler:binary() end
 function handler:closign() end
-function handler:closed() end
 function handler:close()
     self.close = noop
     self:closing();
@@ -83,6 +83,7 @@ function handler:close()
     end
     self:closed();
 end
+function handler:closed() end
 function handler:forbidden()
     return self.route:forbidden()
 end

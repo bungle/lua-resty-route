@@ -24,19 +24,25 @@ local http_error = ngx.HTTP_INTERNAL_SERVER_ERROR
 local http_forbidden = ngx.HTTP_FORBIDDEN
 local http_not_found = ngx.HTTP_NOT_FOUND
 local matchers = {
-    prefix = require "resty.route.matchers.prefix",
-    equals = require "resty.route.matchers.equals",
-    match  = require "resty.route.matchers.match",
-    regex  = require "resty.route.matchers.regex",
-    regexi = require "resty.route.matchers.regexi",
-    simple = require "resty.route.matchers.simple",
+    prefix  = require "resty.route.matchers.prefix",
+    prefixi = require "resty.route.matchers.prefixi",
+    equals  = require "resty.route.matchers.equals",
+    equalsi = require "resty.route.matchers.equalsi",
+    match   = require "resty.route.matchers.match",
+    regex   = require "resty.route.matchers.regex",
+    regexi  = require "resty.route.matchers.regexi",
+    simple  = require "resty.route.matchers.simple",
+    simplei = require "resty.route.matchers.simplei"
 }
 local selectors = {
+    ["*"]  = matchers.prefixi,
     ["="]  = matchers.equals,
+    ["=*"] = matchers.equalsi,
     ["#"]  = matchers.match,
     ["~"]  = matchers.regex,
     ["~*"] = matchers.regexi,
-    ["@"]  = matchers.simple
+    ["@"]  = matchers.simple,
+    ["@*"] = matchers.simplei
 }
 if not pack then
     pack = function(...)

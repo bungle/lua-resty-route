@@ -7,6 +7,7 @@ local flush        = ngx.flush
 local abort        = ngx.on_abort
 local kill         = ngx.thread.kill
 local spawn        = ngx.thread.spawn
+local exiting      = ngx.worker.exiting
 local sub          = string.sub
 local ipairs       = ipairs
 local select       = select
@@ -25,15 +26,17 @@ function mt:__call(self, context, ...)
     abort(self.abort(self))
     self:connect()
     flush(true)
-    local d, t = websocket:recv_frame()
-    while not websocket.fatal do
-        if not d then
-            self:timeout()
-        else
-            if not t then t = "unknown" end
-            if self[t] then self[t](self, d) end
+    if not exiting() then
+        local d, t = websocket:recv_frame()
+        while not websocket.fatal and not exiting() do
+            if not d then
+                self:timeout()
+            else
+                if not t then t = "unknown" end
+                if self[t] then self[t](self, d) end
+            end
+            d, t = websocket:recv_frame()
         end
-        d, t = websocket:recv_frame()
     end
     self:close()
 end

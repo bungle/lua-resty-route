@@ -26,17 +26,15 @@ function mt:__call(self, context, ...)
     abort(self.abort(self))
     self:connect()
     flush(true)
-    if not exiting() then
-        local d, t = websocket:recv_frame()
-        while not websocket.fatal and not exiting() do
-            if not d then
-                self:timeout()
-            else
-                if not t then t = "unknown" end
-                if self[t] then self[t](self, d) end
-            end
-            d, t = websocket:recv_frame()
+    local d, t = websocket:recv_frame()
+    while not websocket.fatal and not exiting() do
+        if not d then
+            self:timeout()
+        else
+            if not t then t = "unknown" end
+            if self[t] then self[t](self, d) end
         end
+        d, t = websocket:recv_frame()
     end
     self:close()
 end

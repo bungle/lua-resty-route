@@ -13,30 +13,32 @@ local ipairs       = ipairs
 local select       = select
 local mt, handler  = {}, {}
 local noop         = function() end
-function mt:__call(self, context, ...)
-    local self = setmetatable(self, handler)
-    self.n = select("#", ...)
-    self.args = { ... }
-    self.context = context
-    self.route = context.route
-    self:upgrade()
-    local websocket, e = server:new(self)
-    if not websocket then self.route:error(e) end
-    self.websocket = websocket
-    abort(self.abort(self))
-    self:connect()
-    flush(true)
-    local d, t = websocket:recv_frame()
-    while not websocket.fatal and not exiting() do
-        if not d then
-            self:timeout()
-        else
-            if not t then t = "unknown" end
-            if self[t] then self[t](self, d) end
+function mt:__call(self)
+    return function(context, ...)
+        local self = setmetatable(self, handler)
+        self.n = select("#", ...)
+        self.args = { ... }
+        self.context = context
+        self.route = context.route
+        self:upgrade()
+        local websocket, e = server:new(self)
+        if not websocket then self.route:error(e) end
+        self.websocket = websocket
+        abort(self.abort(self))
+        self:connect()
+        flush(true)
+        local d, t = websocket:recv_frame()
+        while not websocket.fatal and not exiting() do
+            if not d then
+                self:timeout()
+            else
+                if not t then t = "unknown" end
+                if self[t] then self[t](self, d) end
+            end
+            d, t = websocket:recv_frame()
         end
-        d, t = websocket:recv_frame()
+        self:close()
     end
-    self:close()
 end
 handler.__index = handler
 function handler:upgrading() end
@@ -49,7 +51,7 @@ function handler:upgrade()
     if sub(var.http_origin or "", s, e) ~= host then
         return self:forbidden()
     end
-    self:upgraded();
+    self:upgraded()
 end
 function handler:upgraded() end
 function handler:connect() end

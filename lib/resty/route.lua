@@ -8,7 +8,7 @@ local append = require "resty.route.append"
 local routable = matcher.routable
 local find = matcher.find
 local setmetatable = setmetatable
-local loadfile = loadfile
+local dofile = dofile
 local ipairs = ipairs
 local assert = assert
 local pcall = pcall
@@ -69,7 +69,6 @@ function route:fs(path, location)
     if sub(location, -1) == "/" then
         location = sub(location, 1, #location - 1)
     end
-    local pcall = pcall
     local ok, lfs = pcall(require, "syscall.lfs")
     if not ok then
         ok, lfs = pcall(require, "lfs")
@@ -99,7 +98,7 @@ function route:fs(path, location)
                         elseif b ~= "index" then
                             l = l .. base
                         end
-                        self(handler, l, loadfile(f))
+                        self(handler, l, dofile(f))
                         break
                     end
                 end
@@ -115,7 +114,7 @@ function route:fs(path, location)
                             l = l .. base
                         end
                     end
-                    self(l, loadfile(f))
+                    self(l, dofile(f))
                 end
             end
         end

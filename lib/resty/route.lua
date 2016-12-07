@@ -15,6 +15,12 @@ local pcall = pcall
 local sub = string.sub
 local var = ngx.var
 local route = {}
+local lfs
+do
+    local o, l = pcall(require, "syscall.lfs")
+    if not o then o, l = pcall(require, "lfs") end
+    if o then lfs = l end
+end
 route.__index = route
 function route.new()
     return setmetatable({ routes = {}, before = filters.before(), after = filters.after() }, route)
@@ -57,6 +63,7 @@ function route:__call(method, pattern, func)
     return self
 end
 function route:fs(path, location)
+    assert(lfs, "Lua file system (LFS) library was not found")
     path = path or var.document_root
     if not path then return end
     if sub(path, -1) == "/" then
@@ -69,11 +76,6 @@ function route:fs(path, location)
     if sub(location, -1) == "/" then
         location = sub(location, 1, #location - 1)
     end
-    local ok, lfs = pcall(require, "syscall.lfs")
-    if not ok then
-        ok, lfs = pcall(require, "lfs")
-    end
-    assert(ok, "Lua file system (LFS) library was not found")
     local dirs = {}
     for file in lfs.dir(path) do
         if file ~= "." and file ~= ".." then

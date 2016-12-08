@@ -84,6 +84,6 @@ function router:json(data)
     end
     ngx_header.content_type = "application/json"
     ngx_print(data)
-    self:done();
+    self:done()
 end
 return router

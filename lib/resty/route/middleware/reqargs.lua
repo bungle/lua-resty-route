@@ -1,7 +1,6 @@
 local reqargs = require "resty.reqargs"
 local remove = os.remove
 local pairs = pairs
-
 local function cleanup(self)
     local files = self.files
     for _, f in pairs(files) do
@@ -15,7 +14,6 @@ local function cleanup(self)
     end
     self.files = {}
 end
-
 return function(self)
     return function(options)
         local get, post, files = reqargs(options)

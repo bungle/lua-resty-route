@@ -11,7 +11,7 @@ adviced.**
 `lua-resty-route` uses two clause BSD license.
 
 ```
-Copyright (c) 2015, Aapo Talvensaari
+Copyright (c) 2015 – 2016, Aapo Talvensaari
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,

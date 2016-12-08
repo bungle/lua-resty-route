@@ -1,5 +1,4 @@
 local redis = require "resty.redis"
-
 return function(self)
     return function(options)
         local route = self.route

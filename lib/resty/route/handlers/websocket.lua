@@ -18,9 +18,12 @@ local function find(func)
     local t = type(func)
     if t == "function" then
         return { receive = func }
+    elseif t == "table" then
+        return func
     elseif t == "string" then
-        return require(func)
+        return find(require(func))
     end
+    return nil
 end
 function mt:__call(func)
     local self = find(func)

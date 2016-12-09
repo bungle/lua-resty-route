@@ -11,9 +11,19 @@ local exiting      = ngx.worker.exiting
 local sub          = string.sub
 local ipairs       = ipairs
 local select       = select
+local type         = type
 local mt, handler  = {}, {}
 local noop         = function() end
-function mt:__call(self)
+local function find(func)
+    local t = type(func)
+    if t == "function" then
+        return { receive = func }
+    elseif t == "string" then
+        return require(func)
+    end
+end
+function mt:__call(func)
+    local self = find(func)
     return function(context, ...)
         local self = setmetatable(self, handler)
         self.n = select("#", ...)
@@ -32,8 +42,12 @@ function mt:__call(self)
             if not d then
                 self:timeout()
             else
-                if not t then t = "unknown" end
-                if self[t] then self[t](self, d) end
+                if self.receive then
+                    self:receive(d, t)
+                else
+                    if not t then t = "unknown" end
+                    if self[t] then self[t](self, d) end
+                end
             end
             d, t = websocket:recv_frame()
         end

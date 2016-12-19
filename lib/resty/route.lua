@@ -11,7 +11,9 @@ local setmetatable = setmetatable
 local dofile = dofile
 local ipairs = ipairs
 local assert = assert
+local concat = table.concat
 local pcall = pcall
+local type = type
 local sub = string.sub
 local var = ngx.var
 local route = {}
@@ -28,6 +30,34 @@ end
 function route:match(location, pattern)
     local match, pattern = find(pattern)
     return match(location, pattern)
+end
+function route:clean(location)
+    if type(location) ~= "string" or location == "" or location == "/" or location == "." or location == ".." then return "/" end
+    local i, n, t, s = 1, 1, {}, find(location, "/", 1, true)
+    if not s then return "/" .. location end
+    while s do
+        if i < s then
+            local f = sub(location, i, s - 1)
+            if f == ".." then
+                n = n > 1 and n - 1 or 1
+                t[n] = nil
+            elseif f ~= "." then
+                t[n] = f
+                n = n + 1
+            end
+        end
+        i = s + 1
+        s = find(location, "/", i, true)
+    end
+    local f = sub(location, i)
+    if f == ".." then
+        n = n > 1 and n - 1 or 1
+        t[n] = nil
+    elseif f ~= "." then
+        t[n] = f
+        n = n + 1
+    end
+    return "/" .. concat(t, "/")
 end
 function route:__call(method, pattern, func)
     local c = self.routes
@@ -62,6 +92,7 @@ function route:__call(method, pattern, func)
     end
     return self
 end
+
 function route:fs(path, location)
     assert(lfs, "Lua file system (LFS) library was not found")
     path = path or var.document_root

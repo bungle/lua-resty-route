@@ -17,8 +17,8 @@ local function push(c, func, method, pattern, phase)
 end
 return function(c, func, method, pattern, phase)
     if type(func) == "table" and not func[phase or method] then
-        for _, func in ipairs(func) do
-            push(c, func, method, pattern, phase)
+        for _, f in ipairs(func) do
+            push(c, f, method, pattern, phase)
         end
     else
         push(c, func, method, pattern, phase)

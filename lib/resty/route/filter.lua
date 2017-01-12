@@ -37,7 +37,7 @@ function filter:__call(method, pattern, func)
                 return self
             end
         end
-        append(self[2], method)
+        append(self[1], method)
     end
     return self
 end

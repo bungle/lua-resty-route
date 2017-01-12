@@ -72,6 +72,7 @@ function router:to(location, method)
             process(self, i, resume(a[j], c, method, location))
         end
     end
+    return self
 end
 function router:render(content, context)
     local template = self.context.template
@@ -80,7 +81,7 @@ function router:render(content, context)
     else
         print(content)
     end
-    self:done()
+    return self
 end
 function router:json(data)
     if type(data) == "table" then
@@ -88,6 +89,6 @@ function router:json(data)
     end
     header.content_type = "application/json"
     print(data)
-    self:done()
+    return self
 end
 return router

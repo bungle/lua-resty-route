@@ -1,6 +1,6 @@
 local reqargs = require "resty.reqargs"
-local remove = os.remove
-local pairs = pairs
+local remove  = os.remove
+local pairs   = pairs
 local function cleanup(self)
     local files = self.files
     for _, f in pairs(files) do

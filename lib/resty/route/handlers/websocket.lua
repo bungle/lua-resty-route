@@ -32,10 +32,9 @@ function mt:__call(func)
         self.n = select("#", ...)
         self.args = { ... }
         self.context = context
-        self.route = context.route
         self:upgrade()
         local websocket, e = server:new(self)
-        if not websocket then self.route:error(e) end
+        if not websocket then self:fail(e) end
         self.websocket = websocket
         abort(self.abort(self))
         self:connect()
@@ -98,7 +97,7 @@ function handler:close()
         if not b and self.websocket.fatal then
             return self:error(e)
         else
-            return self.websocket.fatal and self:error(e) or self.route:exit()
+            return self.websocket.fatal and self:error(e) or self:exit()
         end
     end
     self:closed();
@@ -118,9 +117,9 @@ function handler:error(message)
     if not self.websocket.fatal then
         local d, e = self.websocket:send_close()
         if not d and self.websocket.fatal then
-            return self.route:error(message or e)
+            return self:fail(message or e)
         else
-            return self.websocket.fatal and self.route:error(message or e) or self.route:exit()
+            return self.websocket.fatal and self:fail(message or e) or self:exit()
         end
     end
 end

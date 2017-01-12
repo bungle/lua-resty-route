@@ -1,8 +1,8 @@
-local match = ngx.re.match
-local unpack = table.unpack or unpack
-local concat = table.concat
-local find = string.find
-local sub = string.sub
+local match    = ngx.re.match
+local unpack   = table.unpack or unpack
+local concat   = table.concat
+local find     = string.find
+local sub      = string.sub
 local tonumber = tonumber
 local unescape = ngx.unescape_uri
 return function(location, pattern)

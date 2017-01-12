@@ -1,40 +1,48 @@
-local require = require
-local handlers = require "resty.route.handlers"
-local filters = require "resty.route.filters"
-local matcher = require "resty.route.matcher"
-local router = require "resty.route.router"
-local locmet = require "resty.route.locmet"
-local append = require "resty.route.append"
-local routable = matcher.routable
-local find = matcher.find
+local require      = require
+local matcher      = require "resty.route.matcher"
+local router       = require "resty.route.router"
+local append       = require "resty.route.append"
+local filter       = require "resty.route.filter"
+local routable     = matcher.routable
+local resolve      = matcher.resolve
 local setmetatable = setmetatable
-local dofile = dofile
-local ipairs = ipairs
-local assert = assert
-local concat = table.concat
-local pcall = pcall
-local type = type
-local sub = string.sub
-local var = ngx.var
-local route = {}
+local reverse      = string.reverse
+local dofile       = dofile
+local assert       = assert
+local concat       = table.concat
+local lower        = string.lower
+local pcall        = pcall
+local type         = type
+local find         = string.find
+local sub          = string.sub
+local var          = ngx.var
 local lfs
 do
     local o, l = pcall(require, "syscall.lfs")
     if not o then o, l = pcall(require, "lfs") end
     if o then lfs = l end
 end
-route.__index = route
+local route = {}
+function route:__index(n)
+    if route[n] then
+        return route[n]
+    end
+    return function(self, ...)
+        return self(n, ...)
+    end
+end
 function route.new()
-    return setmetatable({ routes = {}, before = filters.before(), after = filters.after() }, route)
+    return setmetatable({ { n = 0 }, filter = filter.new() }, route)
 end
 function route:match(location, pattern)
-    local match, pattern = find(pattern)
+    local match, pattern = resolve(pattern)
     return match(location, pattern)
 end
 function route:clean(location)
     if type(location) ~= "string" or location == "" or location == "/" or location == "." or location == ".." then return "/" end
-    local i, n, t, s = 1, 1, {}, find(location, "/", 1, true)
+    local s = find(location, "/", 1, true)
     if not s then return "/" .. location end
+    local i, n, t = 1, 1, {}
     while s do
         if i < s then
             local f = sub(location, i, s - 1)
@@ -59,40 +67,37 @@ function route:clean(location)
     end
     return "/" .. concat(t, "/")
 end
+function route:use(...)
+    return self.filter(...)
+end
 function route:__call(method, pattern, func)
-    local c = self.routes
     if func then
-        append(c, func, method, pattern)
+        append(self[1], func, method, pattern)
     elseif pattern then
         if not routable(method) then
             return function(routes)
-                append(c, routes, method, pattern)
+                append(self[1], routes, method, pattern)
                 return self
             end
         end
-        for _, v in ipairs(handlers) do
-            append(c, pattern, v, method)
-        end
+        append(self[1], pattern, nil, method)
     else
         return routable(method) and function(routes)
-            for _, handler in ipairs(handlers) do
-                append(c, routes, handler, method)
-            end
+            append(self[1], routes, nil, method)
             return self
         end or function(p, f)
             if f then
-                append(c, f, method, p)
+                append(self[1], f, method, p)
                 return self
             end
             return function(f)
-                append(c, f, method, p)
+                append(self[1], f, method, p)
                 return self
             end
         end
     end
     return self
 end
-
 function route:fs(path, location)
     assert(lfs, "Lua file system (LFS) library was not found")
     path = path or var.document_root
@@ -107,80 +112,45 @@ function route:fs(path, location)
     if sub(location, -1) == "/" then
         location = sub(location, 1, #location - 1)
     end
-    local dirs = {}
-    for file in lfs.dir(path) do
+    local dir = lfs.dir
+    local attributes = lfs.attributes
+    local dirs = { n = 0 }
+    for file in dir(path) do
         if file ~= "." and file ~= ".." then
             local f = path .. "/" .. file
-            local mode = lfs.attributes(f).mode
+            local mode = attributes(f).mode
             if mode == "directory" then
-                dirs[#dirs+1] = { f, location .. "/" .. file }
+                dirs.n = dirs.n + 1
+                dirs[dirs.n] = { f, location .. "/" .. file }
             elseif mode == "file" or mode == "link" and sub(file, -4) == ".lua" then
-                local found = false
-                local base = sub(file, 1, #file - 4)
-                for _, handler in ipairs(handlers) do
-                    local h = "@" .. handler
-                    if sub(base, -#h) == h then
-                        found = true
-                        local b = sub(base, 1, #base - #h - 1)
-                        local l = "=*/"
-                        if location ~= "" then
-                            l = l .. location
-                            if b ~= "index" then
-                                l = l .. "/" .. b
-                            end
-                        elseif b ~= "index" then
-                            l = l .. base
-                        end
-                        self(handler, l, dofile(f))
-                        break
+                local b = sub(file, 1, #file - 4)
+                local m
+                local i = find(reverse(b), "@", 1, true)
+                if i then
+                    m = sub(b, -i+1)
+                    b = sub(b, 1, -i-1)
+                end
+                local l = { "=*/" }
+                if location ~= "" then
+                    l[2] = location
+                    if b ~= "index" then
+                        l[3] = "/"
+                        l[4] = b
+                    end
+                else
+                    if b ~= "index" then
+                        l[2] = b
                     end
                 end
-                if not found then
-                    local l = "=*/"
-                    if location ~= "" then
-                        l = l .. location
-                        if base ~= "index" then
-                            l = l .. "/" .. base
-                        end
-                    else
-                        if base ~= "index" then
-                            l = l .. base
-                        end
-                    end
-                    self(l, dofile(f))
-                end
+                self(m, concat(l), dofile(f))
             end
         end
     end
-    for _, dir in ipairs(dirs) do
-        self:fs(dir[1], dir[2])
+    for i=1, dirs.n do
+        self:fs(dirs[i][1], dirs[i][2])
     end
 end
 function route:dispatch(location, method)
-    location, method = locmet(location, method)
-    local router = router.new(self.routes, self.before.filters, self.after.filters)
-    local context = router.context
-    local bf = self.before.filters
-    local bm = bf[method] or {}
-    for _, filter in ipairs(bf) do
-        filter(context)
-    end
-    for _, filter in ipairs(bm) do
-        filter(context)
-    end
-    router:to(location, method)
-    local af = self.after.filters
-    local am = af[method] or {}
-    for _, filter in ipairs(am) do
-        filter(context)
-    end
-    for _, filter in ipairs(af) do
-        filter(context)
-    end
-end
-for _, method in ipairs(handlers) do
-    route[method] = function(self, pattern, func)
-        return self(method, pattern, func)
-    end
+    router.new(self.filter[1], self.filter[2], self[1]):to(location or var.uri, lower(method or lower(var.http_upgrade) == "websocket" and "websocket" or var.request_method))
 end
 return route

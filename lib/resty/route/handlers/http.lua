@@ -1,5 +1,5 @@
 local require = require
-local type = type
+local type    = type
 local function http(func, method)
     local t = type(func)
     if t == "function" then

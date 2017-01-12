@@ -1,4 +1,4 @@
-local match = ngx.re.match
+local match  = ngx.re.match
 local unpack = table.unpack or unpack
 return function(location, pattern)
     local m = match(location, pattern, "josu")

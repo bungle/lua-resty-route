@@ -1,6 +1,6 @@
-local require = require
-local sub = string.sub
-local type = type
+local require  = require
+local sub      = string.sub
+local type     = type
 local matchers = {
     prefix  = require "resty.route.matchers.prefix",
     prefixi = require "resty.route.matchers.prefixi",
@@ -32,7 +32,7 @@ function matcher.routable(pattern)
     pattern = sub(pattern, 1, 1)
     return selectors[pattern] or pattern == "/"
 end
-function matcher.find(pattern)
+function matcher.resolve(pattern)
     local s = selectors[sub(pattern, 1, 2)]
     if s then return s, sub(pattern, 3)  end
     s = selectors[sub(pattern, 1, 1)]

@@ -1,44 +1,53 @@
-local encode       = require "cjson.safe".encode
-local setmetatable = setmetatable
-local create       = coroutine.create
-local resume       = coroutine.resume
-local status       = coroutine.status
-local select       = select
-local type         = type
-local ngx          = ngx
-local log          = ngx.log
-local redirect     = ngx.redirect
-local exit         = ngx.exit
-local exec         = ngx.exec
-local header       = ngx.header
-local print        = ngx.print
-local OK           = ngx.OK
-local ERR          = ngx.ERR
-local HTTP_OK      = ngx.HTTP_OK
-local HTTP_ERROR   = ngx.HTTP_INTERNAL_SERVER_ERROR
-local function process(self, i, ok, ...)
-    if not ok then
+local encode         = require "cjson.safe".encode
+local setmetatable   = setmetatable
+local resume         = coroutine.resume
+local status         = coroutine.status
+local type           = type
+local ngx            = ngx
+local log            = ngx.log
+local redirect       = ngx.redirect
+local exit           = ngx.exit
+local exec           = ngx.exec
+local header         = ngx.header
+local print          = ngx.print
+local OK             = ngx.OK
+local ERR            = ngx.ERR
+local WARN           = ngx.WARN
+local HTTP_OK        = ngx.HTTP_OK
+local HTTP_ERROR     = ngx.HTTP_INTERNAL_SERVER_ERROR
+local HTTP_NOT_FOUND = ngx.HTTP_NOT_FOUND
+local function process(self, i, t, ok, ...)
+    if ok then
+        if i == 3 then return self:done(...) end
+        if status(t) == "suspended" then
+            local f = self[4]
+            local n = f.n + 1
+            f.n = n
+            f[n] = t
+        end
+    else
         return self:fail(...)
-    elseif i == 3 and select(1, ...) then
-        return self:done(...)
     end
 end
+local function execute(self, i, t, ...)
+    if t then process(self, i, t, resume(t, self.context, ...)) end
+end
 local function finish(self, func, ...)
-    for i=2,1,-1 do
-        local a = self[i]
-        local n = a.n
-        for j=n,1,-1 do
-            if status(a[j]) == "suspended" then
-                process(self, i, resume(a[j]))
-            end
-        end
+    local f = self[4]
+    local n = f.n
+    for i=n,1,-1 do
+        local t = f[i]
+        f[i] = nil
+        f.n = i - 1
+        local ok, err = resume(t)
+        if not ok then log(WARN, err) end
     end
     return func(...)
 end
 local router       = {}
 router.__index = router
 function router.new(application, routing, routes)
-    local self = setmetatable({ application, routing, routes }, router)
+    local self = setmetatable({ application, routing, routes, { n = 0 } }, router)
     self.context = setmetatable({ route = self }, { __index = self })
     self.context.context = self.context
     return self
@@ -63,16 +72,17 @@ function router:fail(error, code)
 end
 function router:to(location, method)
     method = method or "get"
-    local c = self.context
-    for i=1,3 do
+    self.location = location
+    self.method = method
+    for i=self[1] and 1 or 2,3 do
         local a = self[i]
         local n = a.n
         for j=1,n do
-            a[j] = create(a[j])
-            process(self, i, resume(a[j], c, method, location))
+            execute(self, i, a[j](method, location))
         end
+        if i == 1 then self[1] = nil end
     end
-    return self
+    self:fail(HTTP_NOT_FOUND)
 end
 function router:render(content, context)
     local template = self.context.template

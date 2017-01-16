@@ -181,10 +181,10 @@ function route:on(code, func)
     else
         local t = type(code)
         if t == "function" then
-            c[-1] = func
+            c[-1] = code
         elseif t == "table" then
-            if callable(func) then
-                c[-1] = func
+            if callable(code) then
+                c[-1] = code
             else
                 for n, f in pairs(code) do
                     if callable(f) then

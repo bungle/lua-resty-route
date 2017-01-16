@@ -1,3 +1,4 @@
+-- TODO: Rewrite needed
 local var = ngx.var
 return function(self)
     if not not var.http_x_pjax then

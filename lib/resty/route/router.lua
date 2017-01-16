@@ -18,7 +18,7 @@ local HTTP_ERROR     = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_NOT_FOUND = ngx.HTTP_NOT_FOUND
 local function process(self, i, t, ok, ...)
     if ok then
-        if i == 3 then return self:done(...) end
+        if i == 1 then return self:done(...) end
         if status(t) == "suspended" then
             local f = self[4]
             local n = f.n + 1
@@ -31,6 +31,15 @@ local function process(self, i, t, ok, ...)
 end
 local function execute(self, i, t, ...)
     if t then process(self, i, t, resume(t, self.context, ...)) end
+end
+local function go(self, i, location, method)
+    self.location = location
+    self.method = method
+    local a = self[i]
+    local n = a.n
+    for j=1,n do
+        execute(self, i, a[j](method, location))
+    end
 end
 local function finish(self, func, ...)
     local f = self[4]
@@ -46,8 +55,8 @@ local function finish(self, func, ...)
 end
 local router       = {}
 router.__index = router
-function router.new(application, routing, routes)
-    local self = setmetatable({ application, routing, routes, { n = 0 } }, router)
+function router.new(routes, rf, af)
+    local self = setmetatable({ routes, rf, af, { n = 0 } }, router)
     self.context = setmetatable({ route = self }, { __index = self })
     self.context.context = self.context
     return self
@@ -72,16 +81,12 @@ function router:fail(error, code)
 end
 function router:to(location, method)
     method = method or "get"
-    self.location = location
-    self.method = method
-    for i=self[1] and 1 or 2,3 do
-        local a = self[i]
-        local n = a.n
-        for j=1,n do
-            execute(self, i, a[j](method, location))
-        end
-        if i == 1 then self[1] = nil end
+    if self[3] then
+        go(self, 3, location, method)
+        self[3] = nil
     end
+    go(self, 2, location, method)
+    go(self, 1, location, method)
     self:fail(HTTP_NOT_FOUND)
 end
 function router:render(content, context)

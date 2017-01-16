@@ -1,3 +1,4 @@
+-- TODO: Rewrite needed
 local require      = require
 local server       = require "resty.websocket.server"
 local setmetatable = setmetatable
@@ -20,8 +21,6 @@ local function find(func)
         return { receive = func }
     elseif t == "table" then
         return func
-    elseif t == "string" then
-        return find(require(func))
     end
     return nil
 end

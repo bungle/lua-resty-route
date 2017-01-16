@@ -1,7 +1,7 @@
 local require      = require
+local handler      = require "resty.route.handler"
 local matcher      = require "resty.route.matcher"
 local router       = require "resty.route.router"
-local append       = require "resty.route.append"
 local filter       = require "resty.route.filter"
 local routable     = matcher.routable
 local resolve      = matcher.resolve
@@ -32,7 +32,7 @@ function route:__index(n)
     end
 end
 function route.new()
-    return setmetatable({ { n = 0 }, filter = filter.new() }, route)
+    return setmetatable({ { n = 0 }, { n = 0 }, filter = filter.new() }, route)
 end
 function route:match(location, pattern)
     local match, pattern = resolve(pattern)
@@ -72,26 +72,26 @@ function route:use(...)
 end
 function route:__call(method, pattern, func)
     if func then
-        append(self[1], func, method, pattern)
+        handler(self[1], func, method, pattern)
     elseif pattern then
         if not routable(method) then
             return function(routes)
-                append(self[1], routes, method, pattern)
+                handler(self[1], routes, method, pattern)
                 return self
             end
         end
-        append(self[1], pattern, nil, method)
+        handler(self[1], pattern, nil, method)
     else
         return routable(method) and function(routes)
-            append(self[1], routes, nil, method)
+            handler(self[1], routes, nil, method)
             return self
         end or function(p, f)
             if f then
-                append(self[1], f, method, p)
+                handler(self[1], f, method, p)
                 return self
             end
             return function(f)
-                append(self[1], f, method, p)
+                handler(self[1], f, method, p)
                 return self
             end
         end
@@ -150,7 +150,10 @@ function route:fs(path, location)
         self:fs(dirs[i][1], dirs[i][2])
     end
 end
+function route:on(code, func)
+
+end
 function route:dispatch(location, method)
-    router.new(self.filter[1], self.filter[2], self[1]):to(location or var.uri, lower(method or lower(var.http_upgrade) == "websocket" and "websocket" or var.request_method))
+    router.new(self[1], self.filter[1], self.filter[2]):to(location or var.uri, lower(method or lower(var.http_upgrade) == "websocket" and "websocket" or var.request_method))
 end
 return route

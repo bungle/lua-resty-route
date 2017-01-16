@@ -13,14 +13,15 @@ local print          = ngx.print
 local OK             = ngx.OK
 local ERR            = ngx.ERR
 local WARN           = ngx.WARN
-local HTTP_OK        = ngx.HTTP_OK
-local HTTP_ERROR     = ngx.HTTP_INTERNAL_SERVER_ERROR
-local HTTP_NOT_FOUND = ngx.HTTP_NOT_FOUND
+local HTTP_200 = ngx.HTTP_OK
+local HTTP_302 = ngx.HTTP_MOVED_TEMPORARILY
+local HTTP_500 = ngx.HTTP_INTERNAL_SERVER_ERROR
+local HTTP_404 = ngx.HTTP_NOT_FOUND
 local function process(self, i, t, ok, ...)
     if ok then
-        if i == 1 then return self:done(...) end
+        if i == 3 then return self:done(...) end
         if status(t) == "suspended" then
-            local f = self[4]
+            local f = self[1]
             local n = f.n + 1
             f.n = n
             f[n] = t
@@ -41,8 +42,16 @@ local function go(self, i, location, method)
         execute(self, i, a[j](method, location))
     end
 end
-local function finish(self, func, ...)
-    local f = self[4]
+local function finish(self, status, func, ...)
+    if status then
+        local o = self[2]
+        if o[status] then
+            o[status](self.context, status)
+        elseif o[-1] then
+            o[-1](self.context, status)
+        end
+    end
+    local f = self[1]
     local n = f.n
     for i=n,1,-1 do
         local t = f[i]
@@ -55,39 +64,42 @@ local function finish(self, func, ...)
 end
 local router       = {}
 router.__index = router
-function router.new(routes, rf, af)
-    local self = setmetatable({ routes, rf, af, { n = 0 } }, router)
+function router.new(routes, rf, af, errors)
+    local self = setmetatable({ { n = 0 }, errors, routes, rf, af }, router)
     self.context = setmetatable({ route = self }, { __index = self })
     self.context.context = self.context
     return self
 end
 function router:redirect(uri, status)
-    return finish(self, redirect, uri, status)
+    status = status or HTTP_302
+    return finish(self, status, redirect, uri, status)
 end
 function router:exit(status)
-    return finish(self, exit, status or OK)
+    status = status or OK
+    return finish(self, status, exit, status)
 end
 function router:exec(uri, args)
-    return finish(self, exec, uri, args)
+    status = status or OK
+    return finish(self, status, exec, uri, args)
 end
 function router:done()
-    return self:exit(HTTP_OK)
+    return self:exit(HTTP_200)
 end
 function router:fail(error, code)
     if type(error) == "string" then
         log(ERR, error)
     end
-    return self:exit(code or type(error) == "number" and error or HTTP_ERROR)
+    return self:exit(code or type(error) == "number" and error or HTTP_500)
 end
 function router:to(location, method)
     method = method or "get"
-    if self[3] then
-        go(self, 3, location, method)
-        self[3] = nil
+    if self[5] then
+        go(self, 5, location, method)
+        self[5] = nil
     end
-    go(self, 2, location, method)
-    go(self, 1, location, method)
-    self:fail(HTTP_NOT_FOUND)
+    go(self, 4, location, method)
+    go(self, 3, location, method)
+    self:fail(HTTP_404)
 end
 function router:render(content, context)
     local template = self.context.template

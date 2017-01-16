@@ -6,11 +6,14 @@ local filter       = require "resty.route.filter"
 local routable     = matcher.routable
 local resolve      = matcher.resolve
 local setmetatable = setmetatable
+local getmetatable = getmetatable
 local reverse      = string.reverse
 local dofile       = dofile
 local assert       = assert
 local concat       = table.concat
 local lower        = string.lower
+local pairs        = pairs
+local error        = error
 local pcall        = pcall
 local type         = type
 local find         = string.find
@@ -22,6 +25,13 @@ do
     if not o then o, l = pcall(require, "lfs") end
     if o then lfs = l end
 end
+local function callable(func)
+    if type(func) == "function" then
+        return true
+    end
+    local mt = getmetatable(func)
+    return mt and mt.__call
+end
 local route = {}
 function route:__index(n)
     if route[n] then
@@ -32,7 +42,7 @@ function route:__index(n)
     end
 end
 function route.new()
-    return setmetatable({ { n = 0 }, { n = 0 }, filter = filter.new() }, route)
+    return setmetatable({ { n = 0 }, {}, filter = filter.new() }, route)
 end
 function route:match(location, pattern)
     local match, pattern = resolve(pattern)
@@ -149,11 +159,47 @@ function route:fs(path, location)
     for i=1, dirs.n do
         self:fs(dirs[i][1], dirs[i][2])
     end
+    return self
 end
 function route:on(code, func)
-
+    local c = self[2]
+    if func then
+        local t = type(func)
+        if t == "function" then
+            c[code] = func
+        elseif t == "table" then
+            if callable[func[code]] then
+                c[code] = func[code]
+            elseif callable(func) then
+                c[code] = func
+            else
+                error "Invalid error handler"
+            end
+        else
+            error "Invalid error handler"
+        end
+    else
+        local t = type(code)
+        if t == "function" then
+            c[-1] = func
+        elseif t == "table" then
+            if callable(func) then
+                c[-1] = func
+            else
+                for n, f in pairs(code) do
+                    if callable(f) then
+                        c[n] = f
+                    end
+                end
+            end
+        else
+            return function(f)
+                return self:on(code, f)
+            end
+        end
+    end
 end
 function route:dispatch(location, method)
-    router.new(self[1], self.filter[1], self.filter[2]):to(location or var.uri, lower(method or lower(var.http_upgrade) == "websocket" and "websocket" or var.request_method))
+    router.new(self[1], self.filter[1], self.filter[2], self[2]):to(location or var.uri, lower(method or lower(var.http_upgrade) == "websocket" and "websocket" or var.request_method))
 end
 return route

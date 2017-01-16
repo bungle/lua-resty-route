@@ -3,6 +3,7 @@ local getmetatable = getmetatable
 local ipairs       = ipairs
 local pairs        = pairs
 local pcall        = pcall
+local error        = error
 local type         = type
 local function callable(func)
     if type(func) == "function" then
@@ -44,6 +45,8 @@ local function http(push, func, method)
         if ok then
             http(push, func, method)
         end
+    else
+        error "Invalid HTTP handler"
     end
 end
 return http

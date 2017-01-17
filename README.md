@@ -15,7 +15,7 @@ we support these:
 * Simple (case-sensitive and case-insensitive)
 
 Matcher is selected by a prefix in a route's pattern, and they do somewhat
-follow Nginx `location` prefixes:
+follow the Nginx's `location` block prefixes:
 
 Prefix | Matcher | Case-sensitive
 -------|---------|---------------
@@ -33,12 +33,105 @@ Prefix | Matcher | Case-sensitive
 
 ## Routing
 
+There are many different ways to define routes in `lua-resty-template`.
+It can be said that it is somewhat a Lua DSL for defining routes.
 
+To define routes, you first need a new instance of route. This instance
+can be shared with different requests. You may create the routes in
+`init_by_lua*`. Here we define a new route instance:
+
+```lua
+local route = require "resty.route".new()
+```
+
+Now that we do have this `route` instance, we may continue to a next
+section, [HTTP Routing](#http-routing).
 
 ### HTTP Routing
 
+HTTP routing is a most common thing to do in web related routing. That's
+why HTTP routing is the default way to route in `lua-resty-route`. Other
+types of routing include e.g. [WebSockets routing](#websockets-routing).
+
+The most common HTTP request methods (sometimes referred to as verbs) are:
+
+Method | Definition
+-------|-----------
+`GET` | Read
+`POST` | Create
+`PUT` | Update or Replace
+`PATCH` | Update or Modify
+`DELETE` | Delete
+
+While these are the most common ones, `lua-resty-route` is not by any means
+restricted to these. You may use whatever request methods there is just like
+these common ones. But to keep things simple here, we will just use these in
+the examples.
+
+**The general pattern in routing is this:**
+
+```lua
+route(method, [[pattern], func])
+```
+
+**e.g.:**
+
+```lua
+route("get", "/", function() end)
+```
+
+**or with `method` defined in a method call we can use this:**
+
+```lua
+route:[method](pattern, [func])
+```
+
+**e.g.:**
+
+```lua
+route:get("/", function() end)
+```
+
+Now only the first parameter is mandatory. That's why we
+can call these functions in a quite flexible ways. Next we
+look at different ways to call these functions.
+
+**Defining routes as a table:**
+
+```lua
+route "/users" {
+    get  = function() end,
+    post = function() end
+}
+```
+
+**or:**
+
+```lua
+local users = {
+    get  = function() end,
+    post = function() end
+}
+route "/users" (users)
+-- that is same as:
+route("/users", users)
+```
+
+**or even (`string` funcs are `require`d automatically):**
+
+```lua
+route "/users" "controllers.users"
+-- that is same as:
+route("/users", "controllers.users")
+```
+
+**NOTE:** be careful with this as all the callable string keys in that
+table will be used as a route handlers (aka this may lead to unwanted
+exposure of a code that you don't want to be called on HTTP requests).
+
 ### WebSockets Routing
 
+### Dispatching
 
 ## Status Handlers
 

@@ -68,35 +68,25 @@ restricted to these. You may use whatever request methods there is just like
 these common ones. But to keep things simple here, we will just use these in
 the examples.
 
-**The general pattern in routing is this:**
+##### The General Pattern in Routing
 
 ```lua
 route(method, [[pattern], func])
+route[method](pattern, [func])
 ```
 
-**e.g.:**
-
-```lua
-route("get", "/", function(self) end)
-```
-
-**or with `method` defined in a method call we can use this:**
-
-```lua
-route:[method](pattern, [func])
-```
-
-**e.g.:**
+e.g.:
 
 ```lua
 route:get("/", function(self) end)
+route("get", "/", function(self) end)
 ```
 
 Now only the first parameter is mandatory. That's why we
 can call these functions in a quite flexible ways. Next we
 look at different ways to call these functions.
 
-**Defining routes as a table:**
+##### Defining Routes as a Table
 
 ```lua
 route "=/users" {
@@ -105,7 +95,7 @@ route "=/users" {
 }
 ```
 
-**or:**
+or
 
 ```lua
 local users = {
@@ -117,7 +107,7 @@ route "=/users" (users)
 route("=/users", users)
 ```
 
-**or even (`string` funcs are `require`d automatically):**
+or even (`string` funcs are `require`d automatically)
 
 ```lua
 route "=/users" "controllers.users"

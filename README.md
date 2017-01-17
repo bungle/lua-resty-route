@@ -1,10 +1,46 @@
 # lua-resty-route
 
 **lua-resty-route** is a URL routing library for OpenResty supporting
-pluggable matching engines.
+pluggable route matchers.
 
-**This library is heavily work-in-progress. Please do not use it until further
-adviced.**
+## Matchers
+
+`lua-resty-route` supports multiple different matchers on routing. Right now
+we support these:
+
+* Prefix (case-sensitive and case-insensitive)
+* Equals (case-sensitive and case-insensitive)
+* Match (using Lua's `string.match` function)
+* Regex (case-sensitive and case-insensitive)
+* Simple (case-sensitive and case-insensitive)
+
+Matcher is selected by a prefix in a route's pattern, and they do somewhat
+follow Nginx `location` prefixes:
+
+Prefix | Matcher | Case-sensitive
+-------|---------|---------------
+\/ | Prefix | [ ]
+\*/ | Prefix | [x]
+\=/ | Equals | [ ]
+\=*/ | Equals | [x]
+\#/ | Match | [ ]*
+\~/ | Regex | [ ]
+\~*/ | Regex | [x]
+\@/ | Simple | [ ]
+\@*/ | Simple | [x]
+
+## Routing
+
+
+
+### HTTP Routing
+
+### WebSockets Routing
+
+
+## Status Handlers
+
+## Middleware
 
 ## License
 

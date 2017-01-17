@@ -68,7 +68,7 @@ restricted to these. You may use whatever request methods there is just like
 these common ones. But to keep things simple here, we will just use these in
 the examples.
 
-##### The General Pattern in Routing
+#### The General Pattern in Routing
 
 ```lua
 route(method, pattern, func)
@@ -86,32 +86,20 @@ Now only the first parameter is mandatory. That's why we
 can call these functions in a quite flexible ways. Next we
 look at different ways to call these functions.
 
-##### Defining Routes as a Table
+#### Defining Routes as a Table
 
 ```lua
 route "=/users" {
     get  = function(self) end,
     post = function(self) end
 }
-```
-
-or
-
-```lua
 local users = {
     get  = function(self) end,
     post = function(self) end
 }
 route "=/users" (users)
--- that is same as:
 route("=/users", users)
-```
-
-or even (`string` funcs are `require`d automatically)
-
-```lua
-route "=/users" "controllers.users"
--- that is same as:
+route "=/users"  "controllers.users"
 route("=/users", "controllers.users")
 ```
 
@@ -119,12 +107,34 @@ route("=/users", "controllers.users")
 table will be used as a route handlers (aka this may lead to unwanted
 exposure of a code that you don't want to be called on HTTP requests).
 
-**Routing all HTTP request methods:**
+#### Routing all HTTP Request Methods
 
 ```lua
 route "/" (function(self) end)
--- that is same as:
 route("/", function(self) end)
+```
+
+#### Routing Multiple Methods at Once
+
+```lua
+route { "get", "head" } "=/users" (function() end)
+route { "get", "head" } "=/users" {
+    head = function(self) end,
+    get  = function(self) end
+}
+```
+
+#### Routing Multiple Routes at Once
+
+```lua
+route {
+    ["/"] = function(self) end,
+    ["=/users"] = {
+        get  = function(self) end,
+        post = function(self) end
+    }
+}
+
 ```
 
 ### WebSockets Routing

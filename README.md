@@ -78,8 +78,8 @@ route:method(pattern, func)
 e.g.:
 
 ```lua
-route:get("/", function(self) end)
 route("get", "/", function(self) end)
+route:get("/", function(self) end)
 ```
 
 Now only the first parameter is mandatory. That's why we

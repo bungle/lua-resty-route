@@ -3,6 +3,8 @@ local require      = require
 local resolve      = require "resty.route.matcher".resolve
 local http         = require "resty.route.handlers.http"
 local create       = coroutine.create
+local ipairs       = ipairs
+local type         = type
 local handlers = {
     websocket = require "resty.route.handlers.websocket"
 }
@@ -47,5 +49,11 @@ local function push(array, pattern)
     end
 end
 return function(array, func, method, pattern)
-    (handlers[method] or http)(push(array, pattern), func, method)
+    if type(method) == "table" then
+        for _, m in ipairs(method) do
+            (handlers[m] or http)(push(array, pattern), func, m)
+        end
+    else
+        (handlers[method] or http)(push(array, pattern), func, method)
+    end
 end

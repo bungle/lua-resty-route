@@ -141,9 +141,12 @@ route("/", function(self) end)
 
 ### Dispatching
 
-## Status Handlers
-
 ## Middleware
+
+Middlewares in `lua-resty-route` can be defined on either on per request
+or per route basis.
+
+## Status Handlers
 
 ## License
 

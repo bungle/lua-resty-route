@@ -60,7 +60,9 @@ local function finish(self, status, func, ...)
         local ok, err = resume(t)
         if not ok then log(WARN, err) end
     end
-    return func(...)
+    if func then
+        return func(...)
+    end
 end
 local router       = {}
 router.__index = router

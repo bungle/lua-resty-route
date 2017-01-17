@@ -3,10 +3,13 @@ local handler      = require "resty.route.handler"
 local matcher      = require "resty.route.matcher"
 local router       = require "resty.route.router"
 local filter       = require "resty.route.filter"
+local utils        = require "resty.route.utils"
+local array        = utils.array
+local object       = utils.object
+local callable     = utils.callable
 local routable     = matcher.routable
 local resolve      = matcher.resolve
 local setmetatable = setmetatable
-local getmetatable = getmetatable
 local reverse      = string.reverse
 local dofile       = dofile
 local assert       = assert
@@ -24,13 +27,6 @@ do
     local o, l = pcall(require, "syscall.lfs")
     if not o then o, l = pcall(require, "lfs") end
     if o then lfs = l end
-end
-local function callable(func)
-    if type(func) == "function" then
-        return true
-    end
-    local mt = getmetatable(func)
-    return mt and mt.__call
 end
 local route = {}
 function route:__index(n)
@@ -92,17 +88,27 @@ function route:__call(method, pattern, func)
         end
         handler(self[1], pattern, nil, method)
     else
-        return routable(method) and function(routes)
-            handler(self[1], routes, nil, method)
-            return self
-        end or function(p, f)
-            if f then
-                handler(self[1], f, method, p)
+        if routable(method) then
+            return function(routes)
+                handler(self[1], routes, nil, method)
                 return self
             end
-            return function(f)
-                handler(self[1], f, method, p)
-                return self
+        elseif object(method) then
+            for p, f in pairs(method) do
+                if routable(p) then
+                    handler(self[1], f, nil, p)
+                end
+            end
+        else
+            return function(p, f)
+                if f then
+                    handler(self[1], f, method, p)
+                    return self
+                end
+                return function(f)
+                    handler(self[1], f, method, p)
+                    return self
+                end
             end
         end
     end

@@ -1,17 +1,12 @@
 local require      = require
-local getmetatable = getmetatable
+local utils        = require "resty.route.utils"
+local callable     = utils.callable
+local array        = utils.array
 local ipairs       = ipairs
 local pairs        = pairs
 local pcall        = pcall
 local error        = error
 local type         = type
-local function callable(func)
-    if type(func) == "function" then
-        return true
-    end
-    local mt = getmetatable(func)
-    return mt and mt.__call
-end
 local function http(push, func, method)
     local t = type(func)
     if t == "function" then
@@ -22,12 +17,14 @@ local function http(push, func, method)
                 push(func[method], method)
             elseif callable(func) then
                 push(func, method)
-            else
+            elseif array(func) then
                 for _, f in ipairs(func) do
                     if callable(f) then
                         push(f, method)
                     end
                 end
+            else
+                error "Invalid HTTP handler"
             end
         else
             if callable(func) then

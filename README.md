@@ -77,7 +77,7 @@ route(method, [[pattern], func])
 **e.g.:**
 
 ```lua
-route("get", "/", function() end)
+route("get", "/", function(self) end)
 ```
 
 **or with `method` defined in a method call we can use this:**
@@ -89,7 +89,7 @@ route:[method](pattern, [func])
 **e.g.:**
 
 ```lua
-route:get("/", function() end)
+route:get("/", function(self) end)
 ```
 
 Now only the first parameter is mandatory. That's why we
@@ -99,9 +99,9 @@ look at different ways to call these functions.
 **Defining routes as a table:**
 
 ```lua
-route "/users" {
-    get  = function() end,
-    post = function() end
+route "=/users" {
+    get  = function(self) end,
+    post = function(self) end
 }
 ```
 
@@ -109,25 +109,33 @@ route "/users" {
 
 ```lua
 local users = {
-    get  = function() end,
-    post = function() end
+    get  = function(self) end,
+    post = function(self) end
 }
-route "/users" (users)
+route "=/users" (users)
 -- that is same as:
-route("/users", users)
+route("=/users", users)
 ```
 
 **or even (`string` funcs are `require`d automatically):**
 
 ```lua
-route "/users" "controllers.users"
+route "=/users" "controllers.users"
 -- that is same as:
-route("/users", "controllers.users")
+route("=/users", "controllers.users")
 ```
 
 **NOTE:** be careful with this as all the callable string keys in that
 table will be used as a route handlers (aka this may lead to unwanted
 exposure of a code that you don't want to be called on HTTP requests).
+
+**Routing all HTTP request methods:**
+
+```lua
+route "/" (function(self) end)
+-- that is same as:
+route("/", function(self) end)
+```
 
 ### WebSockets Routing
 

@@ -114,7 +114,7 @@ route "/" (function(self) end)
 route("/", function(self) end)
 ```
 
-#### Routing Multiple Methods at Once
+#### Defining Multiple Methods at Once
 
 ```lua
 route { "get", "head" } "=/users" (function(self) end)
@@ -124,7 +124,7 @@ route { "get", "head" } "=/users" {
 }
 ```
 
-#### Routing Multiple Routes at Once
+#### Defining Multiple Routes at Once
 
 ```lua
 route {

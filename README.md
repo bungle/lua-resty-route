@@ -19,15 +19,17 @@ follow Nginx `location` prefixes:
 
 Prefix | Matcher | Case-sensitive
 -------|---------|---------------
-\/ | Prefix | [ ]
-\*/ | Prefix | [x]
-\=/ | Equals | [ ]
-\=*/ | Equals | [x]
-\#/ | Match | [ ]*
-\~/ | Regex | [ ]
-\~*/ | Regex | [x]
-\@/ | Simple | [ ]
-\@*/ | Simple | [x]
+\/ | Prefix | 
+\*/ | Prefix | ✓
+\=/ | Equals |
+\=*/ | Equals | ✓
+\#/ | Match | ¹
+\~/ | Regex | 
+\~*/ | Regex | ✓
+\@/ | Simple | 
+\@*/ | Simple | ✓
+
+¹ Lua `string.match` can be case-insensitive.
 
 ## Routing
 

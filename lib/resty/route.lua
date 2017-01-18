@@ -90,13 +90,15 @@ function route:__call(...)
                 return self
             end
         end
-    else
+    elseif n == 1 then
         local method = ...
         if routable(method) then
             return function(func)
                 handler(self[1], func, nil, method)
                 return self
             end
+        elseif callable(method) then
+            handler(self[1], method, nil, nil)
         elseif object(method) then
             for pattern, func in pairs(method) do
                 if routable(pattern) then
@@ -116,6 +118,8 @@ function route:__call(...)
                 return self
             end
         end
+    else
+        error "Invalid number of arguments"
     end
     return self
 end

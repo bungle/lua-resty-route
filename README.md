@@ -133,7 +133,7 @@ route {
 }
 ```
 
-#### Routing all HTTP Request Methods
+#### Routing all the HTTP Request Methods
 
 ```lua
 route "/" (function(self) end)

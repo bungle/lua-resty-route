@@ -11,6 +11,7 @@ local routable     = matcher.routable
 local resolve      = matcher.resolve
 local setmetatable = setmetatable
 local reverse      = string.reverse
+local select       = select
 local dofile       = dofile
 local assert       = assert
 local concat       = table.concat
@@ -76,39 +77,44 @@ end
 function route:use(...)
     return self.filter(...)
 end
-function route:__call(method, pattern, func)
-    if func then
-        handler(self[1], func, method, pattern)
-    elseif pattern then
-        if not routable(method) then
-            return function(routes)
-                handler(self[1], routes, method, pattern)
+function route:__call(...)
+    local n = select("#", ...)
+    if n == 3 then
+        handler(self[1], ...)
+    elseif n == 2 then
+        local method, pattern = ...
+        if routable(method) then
+            handler(self[1], pattern, nil, method)
+        else
+            return function(func)
+                handler(self[1], func, method, pattern)
                 return self
             end
         end
-        handler(self[1], pattern, nil, method)
     else
+        local method = ...
         if routable(method) then
-            return function(routes)
-                handler(self[1], routes, nil, method)
+            return function(func)
+                handler(self[1], func, nil, method)
                 return self
             end
         elseif object(method) then
-            for p, f in pairs(method) do
-                if routable(p) then
-                    handler(self[1], f, nil, p)
+            for pattern, func in pairs(method) do
+                if routable(pattern) then
+                    handler(self[1], func, nil, pattern)
                 end
             end
         else
-            return function(p, f)
-                if f then
-                    handler(self[1], f, method, p)
-                    return self
+            return function(pattern, func)
+                if func then
+                    handler(self[1], func, method, pattern)
+                else
+                    return function(func)
+                        handler(self[1], func, method, pattern)
+                        return self
+                    end
                 end
-                return function(f)
-                    handler(self[1], f, method, p)
-                    return self
-                end
+                return self
             end
         end
     end

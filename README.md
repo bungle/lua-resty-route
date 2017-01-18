@@ -71,8 +71,8 @@ the examples.
 #### The General Pattern in Routing
 
 ```lua
-route(method, pattern, func)
-route:method(pattern, func)
+route(...)
+route:method(...)
 ```
 
 e.g.:

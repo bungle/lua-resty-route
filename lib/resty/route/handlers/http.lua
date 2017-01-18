@@ -1,6 +1,7 @@
 local require      = require
 local utils        = require "resty.route.utils"
 local callable     = utils.callable
+local object       = utils.object
 local array        = utils.array
 local ipairs       = ipairs
 local pairs        = pairs
@@ -29,12 +30,14 @@ local function http(push, func, method)
         else
             if callable(func) then
                 push(func)
-            else
+            elseif object(func) then
                 for m, f in pairs(func) do
                     if type(m) == "string" and callable(f) then
                         push(f, m)
                     end
                 end
+            else
+                error "Invalid HTTP handler"
             end
         end
     elseif t == "string" then

@@ -1,14 +1,13 @@
 local require      = require
 local handler      = require "resty.route.handler"
-local matcher      = require "resty.route.matcher"
 local router       = require "resty.route.router"
 local filter       = require "resty.route.filter"
 local utils        = require "resty.route.utils"
 local array        = utils.array
 local object       = utils.object
 local callable     = utils.callable
-local routable     = matcher.routable
-local resolve      = matcher.resolve
+local routable     = utils.routable
+local resolve      = utils.resolve
 local setmetatable = setmetatable
 local reverse      = string.reverse
 local select       = select

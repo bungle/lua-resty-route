@@ -1,6 +1,6 @@
 local require      = require
 local handler      = require "resty.route.handler"
-local routable     = require "resty.route.matcher".routable
+local routable     = require "resty.route.utils".routable
 local setmetatable = setmetatable
 local filter       = {}
 function filter:__index(n)

@@ -1,10 +1,11 @@
 local require      = require
 local require      = require
-local resolve      = require "resty.route.matcher".resolve
 local http         = require "resty.route.handlers.http"
+local utils        = require "resty.route.utils"
+local resolve      = utils.resolve
+local array        = utils.array
 local create       = coroutine.create
 local ipairs       = ipairs
-local type         = type
 local handlers = {
     websocket = require "resty.route.handlers.websocket"
 }
@@ -42,18 +43,18 @@ local function locator(h, m, p)
         return create(h)
     end
 end
-local function push(array, pattern)
+local function push(a, pattern)
     return function(func, method)
-        array.n = array.n + 1
-        array[array.n] = locator(func, method, pattern)
+        a.n = a.n + 1
+        a[a.n] = locator(func, method, pattern)
     end
 end
-return function(array, func, method, pattern)
-    if type(method) == "table" then
+return function(a, func, method, pattern)
+    if array(method) then
         for _, m in ipairs(method) do
-            (handlers[m] or http)(push(array, pattern), func, m)
+            (handlers[m] or http)(push(a, pattern), func, m)
         end
     else
-        (handlers[method] or http)(push(array, pattern), func, method)
+        (handlers[method] or http)(push(a, pattern), func, method)
     end
 end

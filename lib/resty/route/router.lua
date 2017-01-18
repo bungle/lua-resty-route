@@ -1,22 +1,23 @@
-local encode         = require "cjson.safe".encode
-local setmetatable   = setmetatable
-local resume         = coroutine.resume
-local status         = coroutine.status
-local type           = type
-local ngx            = ngx
-local log            = ngx.log
-local redirect       = ngx.redirect
-local exit           = ngx.exit
-local exec           = ngx.exec
-local header         = ngx.header
-local print          = ngx.print
-local OK             = ngx.OK
-local ERR            = ngx.ERR
-local WARN           = ngx.WARN
-local HTTP_200 = ngx.HTTP_OK
-local HTTP_302 = ngx.HTTP_MOVED_TEMPORARILY
-local HTTP_500 = ngx.HTTP_INTERNAL_SERVER_ERROR
-local HTTP_404 = ngx.HTTP_NOT_FOUND
+local encode       = require "cjson.safe".encode
+local setmetatable = setmetatable
+local resume       = coroutine.resume
+local status       = coroutine.status
+local pcall        = pcall
+local type         = type
+local ngx          = ngx
+local log          = ngx.log
+local redirect     = ngx.redirect
+local exit         = ngx.exit
+local exec         = ngx.exec
+local header       = ngx.header
+local print        = ngx.print
+local OK           = ngx.OK
+local ERR          = ngx.ERR
+local WARN         = ngx.WARN
+local HTTP_200     = ngx.HTTP_OK
+local HTTP_302     = ngx.HTTP_MOVED_TEMPORARILY
+local HTTP_500     = ngx.HTTP_INTERNAL_SERVER_ERROR
+local HTTP_404     = ngx.HTTP_NOT_FOUND
 local function process(self, i, t, ok, ...)
     if ok then
         if i == 3 then return self:done(...) end
@@ -44,12 +45,13 @@ local function go(self, i, location, method)
 end
 local function finish(self, status, func, ...)
     if status then
-        local o = self[2]
-        if o[status] then
-            o[status](self.context, status)
-        elseif o[-1] then
-            o[-1](self.context, status)
+        local t, o, e = self[2], true
+        if t[status] then
+            o, e = pcall(t[status], self.context, status)
+        elseif t[-1] then
+            o, e = pcall(t[-1], self.context, status)
         end
+        if not o then log(WARN, e) end
     end
     local f = self[1]
     local n = f.n
@@ -57,12 +59,10 @@ local function finish(self, status, func, ...)
         local t = f[i]
         f[i] = nil
         f.n = i - 1
-        local ok, err = resume(t)
-        if not ok then log(WARN, err) end
+        local o, e = resume(t)
+        if not o then log(WARN, e) end
     end
-    if func then
-        return func(...)
-    end
+    return func(...)
 end
 local router       = {}
 router.__index = router

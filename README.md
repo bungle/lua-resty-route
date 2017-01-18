@@ -1,7 +1,8 @@
 # lua-resty-route
 
 **lua-resty-route** is a URL routing library for OpenResty supporting
-pluggable route matchers.
+multiple route matchers, middleware, and HTTP and WebSockets handlers
+to mention a few of its features.
 
 ## Matchers
 
@@ -47,6 +48,8 @@ local route = require "resty.route".new()
 Now that we do have this `route` instance, we may continue to a next
 section, [HTTP Routing](#http-routing).
 
+**Note:** Routes are tried in the order they are added when dispatched.
+
 ### HTTP Routing
 
 HTTP routing is a most common thing to do in web related routing. That's
@@ -82,9 +85,10 @@ route("get", "/", function(self) end)
 route:get("/", function(self) end)
 ```
 
-Now only the first parameter is mandatory. That's why we
-can call these functions in a quite flexible ways. Next we
-look at different ways to call these functions.
+The first example takes one to three arguments, and the second one takes one or
+two arguments. Only the first function argument is mandatory. That's why we can
+call these functions in a quite flexible ways. Next we look at different ways to
+call these functions.
 
 #### Defining Routes as a Table
 
@@ -103,16 +107,9 @@ route "=/users"  "controllers.users"
 route("=/users", "controllers.users")
 ```
 
-**NOTE:** be careful with this as all the callable string keys in that
+**Note:** be careful with this as all the callable string keys in that
 table will be used as a route handlers (aka this may lead to unwanted
 exposure of a code that you don't want to be called on HTTP requests).
-
-#### Routing all HTTP Request Methods
-
-```lua
-route "/" (function(self) end)
-route("/", function(self) end)
-```
 
 #### Defining Multiple Methods at Once
 
@@ -134,7 +131,19 @@ route {
         post = function(self) end
     }
 }
+```
 
+#### Routing all HTTP Request Methods
+
+```lua
+route "/" (function(self) end)
+route("/", function(self) end)
+```
+
+#### The Catch all Route
+
+```lua
+route(function(self) end)
 ```
 
 ### WebSockets Routing

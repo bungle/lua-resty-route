@@ -50,6 +50,12 @@ local selectors = {
     [T] = matchers.regex,
     [A] = matchers.simple
 }
+local function location(l)
+    return l or var.uri
+end
+local function method(m)
+    return lower(m or lower(var.http_upgrade) == "websocket" and "websocket" or var.request_method)
+end
 local function array(t)
     if type(t) ~= "table" then return false end
     local m, c = 0, 0
@@ -370,7 +376,7 @@ function route:on(code, func)
         end
     end
 end
-function route:dispatch(location, method)
-    router.new(unpack(self)):to(location or var.uri, lower(method or lower(var.http_upgrade) == "websocket" and "websocket" or var.request_method))
+function route:dispatch(l, m)
+    router.new(unpack(self)):to(location(l), method(m))
 end
 return route

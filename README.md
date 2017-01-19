@@ -4,22 +4,6 @@
 multiple route matchers, middleware, and HTTP and WebSockets handlers
 to mention a few of its features.
 
-## Roadmap
-
-This is a small collection of ideas that may or may not be implemented as
-a part of `lua-resty-route`.
-
-1. Add more documentation
-2. Rewrite current middlewares and add new ones
-3. Rewrite current websocket handler
-4. Add route statistics
-5. Add automatic route cleaning (possibly configurable)
-6. Add automatic slash-handling and redirecting (possibly configurable)
-7. Add a more automated way to define redirects
-8. Add support for easy way to define Web Hooks
-9. Add support for "provides", e.g. renderers
-10. Add tests
-
 ## Matchers
 
 `lua-resty-route` supports multiple different matchers on routing. Right now
@@ -65,6 +49,8 @@ Now that we do have this `route` instance, we may continue to a next
 section, [HTTP Routing](#http-routing).
 
 **Note:** Routes are tried in the order they are added when dispatched.
+
+### Route Arguments
 
 ### HTTP Routing
 
@@ -164,14 +150,36 @@ route(function(self) end)
 
 ### WebSockets Routing
 
+### File System Routing
+
 ### Dispatching
 
 ## Middleware
 
-Middlewares in `lua-resty-route` can be defined on either on per request
+Middleware in `lua-resty-route` can be defined on either on per request
 or per route basis.
 
 ## Status Handlers
+
+## Roadmap
+
+This is a small collection of ideas that may or may not be implemented as
+a part of `lua-resty-route`.
+
+1. Add more documentation
+2. Rewrite current middlewares and add new ones
+3. Rewrite current websocket handler
+4. Add route statistics
+5. Add automatic route cleaning (possibly configurable) (clean function is already written)
+6. Add automatic slash-handling and redirecting (possibly configurable)
+7. Add a more automated way to define redirects
+8. Add a support for easy way to define Web Hooks routes
+9. Add a support for easy way to define Server Sent Events routes
+10. Add a support for "provides", e.g. renderers
+11. Add support for conditions, e.g. content negotiation
+12. Add support for named routes or aliases
+13. ~~Add `\Q` and `\E` regex quoting to simple matcher~~
+14. Add tests
 
 ## License
 

@@ -87,17 +87,18 @@ local function resolve(pattern)
     if s then return s, sub(pattern, 2) end
     return matchers.prefix, pattern
 end
+local function matcher(h, ...)
+    if select(1, ...) then
+        return create(h), ...
+    end
+end
 local function locator(h, m, p)
     if m then
         if p then
             local match, pattern = resolve(p)
             return function(method, location)
                 if m == method then
-                    return (function(ok, ...)
-                        if ok then
-                            return create(h), ...
-                        end
-                    end)(match(location, pattern))
+                    return matcher(h, match(location, pattern))
                 end
             end
         else
@@ -110,11 +111,7 @@ local function locator(h, m, p)
     elseif p then
         local match, pattern = resolve(p)
         return function(_, location)
-            return (function(ok, ...)
-                if ok then
-                    return create(h), ...
-                end
-            end)(match(location, pattern))
+            return matcher(h, match(location, pattern))
         end
     end
     return function()

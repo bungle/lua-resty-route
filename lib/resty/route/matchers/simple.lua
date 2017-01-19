@@ -10,8 +10,12 @@ return function(location, pattern)
     local i, c, p, j, n = 1, {}, {}, 0, 1
     local s = find(pattern, ":", 1, true)
     while s do
-        p[n] = sub(pattern, i, s - 1)
-        n = n + 1
+        if s > i then
+            p[n] = [[\Q]]
+            p[n+1] = sub(pattern, i, s - 1)
+            p[n+2] = [[\E]]
+            n=n+3
+        end
         local x = sub(pattern, s, s + 6)
         if x == ":number" then
             p[n] = [[(\d+)]]
@@ -26,10 +30,19 @@ return function(location, pattern)
         s = find(pattern, ":", s + 1, true)
     end
     if j > 0 then
-        p[n] = sub(pattern, i)
-        pattern = concat(p)
+        local rest = sub(pattern, i)
+        if #rest > 0 then
+            p[n] = [[\Q]]
+            p[n+1] = rest
+            p[n+2] = [[\E$]]
+        else
+            p[n] = "$"
+        end
+    else
+        p[1] = pattern
+        p[2] = "$"
     end
-    local m = match(location, concat{ pattern, "$" }, "ajosu")
+    local m = match(location, concat(p), "ajosu")
     if m then
         if m[1] then
             for i = 1, j do

@@ -18,17 +18,17 @@ we support these:
 Matcher is selected by a prefix in a route's pattern, and they do somewhat
 follow the Nginx's `location` block prefixes:
 
-Prefix | Matcher | Case-sensitive
--------|---------|---------------
-`[none]` | Prefix | ✓
-`*` | Prefix | 
-`=` | Equals | ✓
-`=*` | Equals | 
-`#` | Match | ¹
-`~` | Regex | ✓
-`~*` | Regex | 
-`@` | Simple | ✓
-`@*` | Simple | 
+Prefix   | Matcher | Case-sensitive
+---------|---------|---------------
+`[none]` | Prefix  | ✓
+`*`      | Prefix  | 
+`=`      | Equals  | ✓
+`=*`     | Equals  | 
+`#`      | Match   | ¹
+`~`      | Regex   | ✓
+`~*`     | Regex   | 
+`@`      | Simple  | ✓
+`@*`     | Simple  | 
 
 ¹ Lua `string.match` can be case-sensitive or case-insensitive.
 
@@ -60,12 +60,12 @@ types of routing include e.g. [WebSockets routing](#websockets-routing).
 
 The most common HTTP request methods (sometimes referred to as verbs) are:
 
-Method | Definition
--------|-----------
-`GET` | Read
-`POST` | Create
-`PUT` | Update or Replace
-`PATCH` | Update or Modify
+Method   | Definition
+---------|-----------
+`GET`    | Read
+`POST`   | Create
+`PUT`    | Update or Replace
+`PATCH`  | Update or Modify
 `DELETE` | Delete
 
 While these are the most common ones, `lua-resty-route` is not by any means

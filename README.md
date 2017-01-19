@@ -166,20 +166,21 @@ or per route basis.
 This is a small collection of ideas that may or may not be implemented as
 a part of `lua-resty-route`.
 
-1. Add more documentation
-2. Rewrite current middleware and add new ones
-3. Rewrite current websocket handler
-4. Add route statistics
-5. Add automatic route cleaning (possibly configurable) (clean function is already written)
-6. Add automatic slash-handling and redirecting (possibly configurable)
-7. Add a more automated way to define redirects
-8. Add a support for easy way to define Web Hooks routes
-9. Add a support for easy way to define Server Sent Events routes
-10. Add a support for "provides", e.g. renderers
-11. Add support for conditions, e.g. content negotiation
-12. Add support for named routes or aliases
-13. ~~Add `\Q` and `\E` regex quoting to simple matcher~~
-14. Add tests
+* Add more documentation
+* Rewrite current middleware and add new ones
+* Rewrite current websocket handler
+* Add route statistics
+* Add an automatic route cleaning and redirecting (possibly configurable) (clean function is already written)
+* Add an automatic slash handling and redirecting (possibly configurable)
+* Add a more automated way to define redirects
+* Add a support for easy way to define Web Hooks routes
+* Add a support for easy way to define Server Sent Events routes
+* Add a support for "provides", e.g. renderers
+* Add a support for conditions, e.g. content negotiation
+* Add a support for named routes or aliases
+* Add a support for route grouping
+* ~~Add `\Q` and `\E` regex quoting to simple matcher~~
+* Add tests
 
 ## License
 

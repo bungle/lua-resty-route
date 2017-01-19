@@ -167,7 +167,7 @@ This is a small collection of ideas that may or may not be implemented as
 a part of `lua-resty-route`.
 
 1. Add more documentation
-2. Rewrite current middlewares and add new ones
+2. Rewrite current middleware and add new ones
 3. Rewrite current websocket handler
 4. Add route statistics
 5. Add automatic route cleaning (possibly configurable) (clean function is already written)
@@ -178,7 +178,7 @@ a part of `lua-resty-route`.
 10. Add a support for "provides", e.g. renderers
 11. Add support for conditions, e.g. content negotiation
 12. Add support for named routes or aliases
-13. ~~Add `\Q` and `\E` regex quoting to simple matcher~~
+13. ~~Add `\Q` and `\E` regex quoting to simple matcher~
 14. Add tests
 
 ## License

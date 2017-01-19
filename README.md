@@ -18,17 +18,17 @@ we support these:
 Matcher is selected by a prefix in a route's pattern, and they do somewhat
 follow the Nginx's `location` block prefixes:
 
-Prefix   | Matcher | Case-sensitive
----------|---------|---------------
-`[none]` | Prefix  | ✓
-`*`      | Prefix  | 
-`=`      | Equals  | ✓
-`=*`     | Equals  | 
-`#`      | Match   | ¹
-`~`      | Regex   | ✓
-`~*`     | Regex   | 
-`@`      | Simple  | ✓
-`@*`     | Simple  | 
+Prefix   | Matcher | Case-sensitive | Used by Default
+---------|---------|----------------|----------------
+`[none]` | Prefix  | ✓              | ✓
+`*`      | Prefix  |                |
+`=`      | Equals  | ✓              |
+`=*`     | Equals  |                |
+`#`      | Match   | ¹              |
+`~`      | Regex   | ✓              |
+`~*`     | Regex   |                |
+`@`      | Simple  | ✓              |
+`@*`     | Simple  |                |
 
 ¹ Lua `string.match` can be case-sensitive or case-insensitive.
 

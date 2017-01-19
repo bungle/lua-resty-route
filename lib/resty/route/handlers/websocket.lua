@@ -1,4 +1,10 @@
+local server = require "resty.websocket.server"
+local websocket = {}
+return function(push, func)
+
+end
 -- TODO: Rewrite needed
+--[[
 local require      = require
 local server       = require "resty.websocket.server"
 local setmetatable = setmetatable
@@ -143,4 +149,4 @@ function handler:spawn(...)
     if not self.threads then self.threads = {} end
     self.threads[#self.threads+1] = spawn(...)
 end
-return setmetatable(handler, mt)
+]]

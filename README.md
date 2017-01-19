@@ -4,6 +4,22 @@
 multiple route matchers, middleware, and HTTP and WebSockets handlers
 to mention a few of its features.
 
+## Roadmap
+
+This is a small collection of ideas that may or may not be implemented as
+a part of `lua-resty-route`.
+
+1. Add more documentation
+2. Rewrite current middlewares and add new ones
+3. Rewrite current websocket handler
+4. Add route statistics
+5. Add automatic route cleaning (possibly configurable)
+6. Add automatic slash-handling and redirecting (possibly configurable)
+7. Add a more automated way to define redirects
+8. Add support for easy way to define Web Hooks
+9. Add support for "provides", e.g. renderers
+10. Add tests
+
 ## Matchers
 
 `lua-resty-route` supports multiple different matchers on routing. Right now

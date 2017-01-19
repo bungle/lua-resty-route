@@ -283,14 +283,14 @@ function route:fs(path, location)
     assert(lfs, "Lua file system (LFS) library was not found")
     path = path or var.document_root
     if not path then return end
-    if sub(path, -1) == "/" then
+    if byte(path, -1) == F then
         path = sub(path, 1, #path - 1)
     end
     location = location or ""
-    if sub(location, 1, 1) == "/" then
+    if byte(location, 1, 1) == F then
         location = sub(location, 2)
     end
-    if sub(location, -1) == "/" then
+    if byte(location, -1) == F then
         location = sub(location, 1, #location - 1)
     end
     local dir = lfs.dir

@@ -18,9 +18,16 @@ local floor        = math.floor
 local pcall        = pcall
 local type         = type
 local find         = string.find
+local byte         = string.byte
 local max          = math.max
 local sub          = string.sub
 local var          = ngx.var
+local S            = byte "*"
+local H            = byte "#"
+local E            = byte "="
+local T            = byte "~"
+local F            = byte "/"
+local A            = byte "@"
 local lfs
 do
     local o, l = pcall(require, "syscall.lfs")
@@ -32,24 +39,16 @@ local handlers = {
 }
 local matchers = {
     prefix  = require "resty.route.matchers.prefix",
-    prefixi = require "resty.route.matchers.prefixi",
     equals  = require "resty.route.matchers.equals",
-    equalsi = require "resty.route.matchers.equalsi",
     match   = require "resty.route.matchers.match",
     regex   = require "resty.route.matchers.regex",
-    regexi  = require "resty.route.matchers.regexi",
     simple  = require "resty.route.matchers.simple",
-    simplei = require "resty.route.matchers.simplei"
 }
 local selectors = {
-    ["*"]  = matchers.prefixi,
-    ["="]  = matchers.equals,
-    ["=*"] = matchers.equalsi,
-    ["#"]  = matchers.match,
-    ["~"]  = matchers.regex,
-    ["~*"] = matchers.regexi,
-    ["@"]  = matchers.simple,
-    ["@*"] = matchers.simplei
+    [E] = matchers.equals,
+    [H] = matchers.match,
+    [T] = matchers.regex,
+    [A] = matchers.simple
 }
 local function array(t)
     if type(t) ~= "table" then return false end
@@ -73,18 +72,17 @@ local function callable(func)
 end
 local function routable(pattern)
     if type(pattern) ~= "string" then return false end
-    local pattern = sub(pattern, 1, 2)
-    if selectors[pattern] then
-        return true
-    end
-    pattern = sub(pattern, 1, 1)
-    return selectors[pattern] or pattern == "/"
+    local b = byte(pattern, 1, 1)
+    return selectors[b] or S == b or F == b
 end
 local function resolve(pattern)
-    local s = selectors[sub(pattern, 1, 2)]
-    if s then return s, sub(pattern, 3)  end
-    s = selectors[sub(pattern, 1, 1)]
-    if s then return s, sub(pattern, 2) end
+    local b = byte(pattern, 1, 1)
+    if b == S then return matchers.prefix, sub(pattern, 2), true end
+    local s = selectors[b]
+    if s then
+        if b == H or byte(pattern, 2, 2) ~= S then return s, sub(pattern, 2) end
+        return s, sub(pattern, 3), true
+    end
     return matchers.prefix, pattern
 end
 local function matcher(h, ...)
@@ -95,10 +93,10 @@ end
 local function locator(h, m, p)
     if m then
         if p then
-            local match, pattern = resolve(p)
+            local match, pattern, insensitive = resolve(p)
             return function(method, location)
                 if m == method then
-                    return matcher(h, match(location, pattern))
+                    return matcher(h, match(location, pattern, insensitive))
                 end
             end
         else
@@ -109,9 +107,9 @@ local function locator(h, m, p)
             end
         end
     elseif p then
-        local match, pattern = resolve(p)
+        local match, pattern, insensitive = resolve(p)
         return function(_, location)
-            return matcher(h, match(location, pattern))
+            return matcher(h, match(location, pattern, insensitive))
         end
     end
     return function()
@@ -246,8 +244,8 @@ function route:array()
     return self[1]
 end
 function route:match(location, pattern)
-    local match, pattern = resolve(pattern)
-    return match(location, pattern)
+    local match, pattern, insensitive = resolve(pattern)
+    return match(location, pattern, insensitive)
 end
 function route:clean(location)
     if type(location) ~= "string" or location == "" or location == "/" or location == "." or location == ".." then return "/" end

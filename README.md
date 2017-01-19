@@ -178,7 +178,7 @@ a part of `lua-resty-route`.
 10. Add a support for "provides", e.g. renderers
 11. Add support for conditions, e.g. content negotiation
 12. Add support for named routes or aliases
-13. ~~Add `\Q` and `\E` regex quoting to simple matcher~
+13. ~~Add `\Q` and `\E` regex quoting to simple matcher~~
 14. Add tests
 
 ## License

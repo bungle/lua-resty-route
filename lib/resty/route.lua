@@ -158,6 +158,8 @@ local function http(push, func, method)
         local ok, func = pcall(require, func)
         if ok then
             http(push, func, method)
+        else
+            error "Invalid HTTP handler"
         end
     else
         error "Invalid HTTP handler"

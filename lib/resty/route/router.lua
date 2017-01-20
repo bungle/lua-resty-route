@@ -4,6 +4,7 @@ local resume       = coroutine.resume
 local status       = coroutine.status
 local pcall        = pcall
 local type         = type
+local next         = next
 local ngx          = ngx
 local log          = ngx.log
 local redirect     = ngx.redirect
@@ -45,27 +46,30 @@ local function go(self, i, location, method)
 end
 local function finish(self, status, func, ...)
     if status then
-        local t, f = self[2], nil
-        if t[status] then
-            f = t[status]
-        elseif status >= 100 and status <= 199 and t.info then
-            f = t.info
-        elseif status >= 200 and status <= 299 and t.success then
-            f = t.success
-        elseif status >= 300 and status <= 399 and t.redirect then
-            f = t.redirect
-        elseif status >= 400 and status <= 499 and t["client error"] then
-            f = t["client error"]
-        elseif status >= 500 and status <= 599 and t["server error"] then
-            f = t["server error"]
-        elseif status >= 400 and status <= 599 and t.error then
-            f = t.error
-        elseif t[-1] then
-            f = t[-1]
-        end
-        if f then
-            local o, e = pcall(f, self.context, status)
-            if not o then log(WARN, e) end
+        local t = self[2]
+        if next(t) then
+            local f
+            if t[status] then
+                f = t[status]
+            elseif status >= 100 and status <= 199 and t.info then
+                f = t.info
+            elseif status >= 200 and status <= 299 and t.success then
+                f = t.success
+            elseif status >= 300 and status <= 399 and t.redirect then
+                f = t.redirect
+            elseif status >= 400 and status <= 499 and t["client error"] then
+                f = t["client error"]
+            elseif status >= 500 and status <= 599 and t["server error"] then
+                f = t["server error"]
+            elseif status >= 400 and status <= 599 and t.error then
+                f = t.error
+            elseif t[-1] then
+                f = t[-1]
+            end
+            if f then
+                local o, e = pcall(f, self.context, status)
+                if not o then log(WARN, e) end
+            end
         end
     end
     local f = self[1]

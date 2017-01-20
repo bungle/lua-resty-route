@@ -45,13 +45,28 @@ local function go(self, i, location, method)
 end
 local function finish(self, status, func, ...)
     if status then
-        local t, o, e = self[2], true
+        local t, f = self[2], nil
         if t[status] then
-            o, e = pcall(t[status], self.context, status)
+            f = t[status]
+        elseif status >= 100 and status <= 199 and t.info then
+            f = t.info
+        elseif status >= 200 and status <= 299 and t.success then
+            f = t.success
+        elseif status >= 300 and status <= 399 and t.redirect then
+            f = t.redirect
+        elseif status >= 400 and status <= 499 and t["client error"] then
+            f = t["client error"]
+        elseif status >= 500 and status <= 599 and t["server error"] then
+            f = t["server error"]
+        elseif status >= 400 and status <= 599 and t.error then
+            f = t.error
         elseif t[-1] then
-            o, e = pcall(t[-1], self.context, status)
+            f = t[-1]
         end
-        if not o then log(WARN, e) end
+        if f then
+            local o, e = pcall(f, self.context, status)
+            if not o then log(WARN, e) end
+        end
     end
     local f = self[1]
     local n = f.n

@@ -175,10 +175,7 @@ end
 local function handle(self, method, pattern, func)
     local list = getmetatable(self) == filter and pattern and self[1] or self[2]
     local push = push(list, pattern)
-    if type(func) == "string" and byte(func) == A then
-        local n = list[sub(func, 2)]
-        if n then func = n end
-    end
+    func = list[func] or func
     if array(method) then
         for _, m in ipairs(method) do
             (handlers[m] or http)(push, func, m)

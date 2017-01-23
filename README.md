@@ -152,14 +152,18 @@ route(function(self) end)
 
 ### File System Routing
 
+### Named Routes
+
 ### Dispatching
+
+### Bootstrapping
 
 ## Middleware
 
 Middleware in `lua-resty-route` can be defined on either on per request
 or per route basis.
 
-## Status Handlers
+## Events
 
 ## Roadmap
 
@@ -177,9 +181,10 @@ a part of `lua-resty-route`.
 * Add a support for easy way to define Server Sent Events routes
 * Add a support for "provides", e.g. renderers
 * Add a support for conditions, e.g. content negotiation
-* Add a support for named routes or aliases
+* ~~Add a support for named routes~~
 * Add a support for route grouping
 * ~~Add `\Q` and `\E` regex quoting to simple matcher~~
+* Add bootstrapping functionality from Nginx configs
 * Add tests
 
 ## License

@@ -50,6 +50,7 @@ local selectors = {
     [T] = matchers.regex,
     [A] = matchers.simple
 }
+local route, filter = {}, {}
 local function location(l)
     return l or var.uri
 end
@@ -78,15 +79,15 @@ local function callable(func)
 end
 local function routable(pattern)
     if type(pattern) ~= "string" then return false end
-    local b = byte(pattern, 1, 1)
+    local b = byte(pattern)
     return selectors[b] or S == b or F == b
 end
 local function resolve(pattern)
-    local b = byte(pattern, 1, 1)
+    local b = byte(pattern)
     if b == S then return matchers.prefix, sub(pattern, 2), true end
     local s = selectors[b]
     if s then
-        if b == H or byte(pattern, 2, 2) ~= S then return s, sub(pattern, 2) end
+        if b == H or byte(pattern, 2) ~= S then return s, sub(pattern, 2) end
         return s, sub(pattern, 3), true
     end
     return matchers.prefix, pattern
@@ -165,20 +166,25 @@ local function http(push, func, method)
         error "Invalid HTTP handler"
     end
 end
-local function push(self, pattern)
-    local a = self:array(pattern)
+local function push(a, pattern)
     return function(func, method)
         a.n = a.n + 1
         a[a.n] = locator(func, method, pattern)
     end
 end
 local function handle(self, method, pattern, func)
+    local list = getmetatable(self) == filter and pattern and self[1] or self[2]
+    local push = push(list, pattern)
+    if type(func) == "string" and byte(func) == A then
+        local n = list[sub(func, 2)]
+        if n then func = n end
+    end
     if array(method) then
         for _, m in ipairs(method) do
-            (handlers[m] or http)(push(self, pattern), func, m)
+            (handlers[m] or http)(push, func, m)
         end
     else
-        (handlers[method] or http)(push(self, pattern), func, method)
+        (handlers[method] or http)(push, func, method)
     end
 end
 local function handler(self, ...)
@@ -230,26 +236,61 @@ local function handler(self, ...)
     end
     return self
 end
+local function named(self, i, code, func)
+    local c = self[i]
+    if func then
+        local t = type(func)
+        if t == "function" then
+            c[code] = func
+        elseif t == "table" then
+            if callable[func[code]] then
+                c[code] = func[code]
+            elseif callable(func) then
+                c[code] = func
+            else
+                error "Invalid handler"
+            end
+        else
+            error "Invalid handler"
+        end
+    else
+        local t = type(code)
+        if t == "function" then
+            c[-1] = code
+        elseif t == "table" then
+            if callable(code) then
+                c[-1] = code
+            else
+                for n, f in pairs(code) do
+                    if callable(f) then
+                        c[n] = f
+                    end
+                end
+            end
+        else
+            return function(func)
+                return named(self, i, code, func)
+            end
+        end
+    end
+    return self
+end
 local function index(self, n)
     local field = rawget(getmetatable(self), n)
     return field and field or function(self, ...)
         return self(n, ...)
     end
 end
-local filter = { __index = index, __call = handler }
+filter.__index = index
+filter.__call = handler
 function filter.new(...)
     return setmetatable({ ... }, filter)
 end
-function filter:array(pattern)
-    return pattern and self[1] or self[2]
-end
-local route = { __index = index, __call = handler }
+route.__index = index
+route.__call = handler
 function route.new()
-    local a, b, c, d = { n = 0 }, { n = 0 }, { n = 0 }, {}
-    return setmetatable({ a, b, c, d, filter = filter.new(b, c) }, route)
-end
-function route:array()
-    return self[1]
+    local a, b = { n = 0 }, { n = 0 }
+    return setmetatable({ {}, { n = 0 }, a, b, filter = filter.new(a, b) }, route)
 end
 function route:match(location, pattern)
     local match, pattern, insensitive = resolve(pattern)
@@ -295,7 +336,7 @@ function route:fs(path, location)
         path = sub(path, 1, #path - 1)
     end
     location = location or ""
-    if byte(location, 1, 1) == F then
+    if byte(location) == F then
         location = sub(location, 2)
     end
     if byte(location, -1) == F then
@@ -340,43 +381,11 @@ function route:fs(path, location)
     end
     return self
 end
-function route:on(code, func)
-    local c = self[4]
-    if func then
-        local t = type(func)
-        if t == "function" then
-            c[code] = func
-        elseif t == "table" then
-            if callable[func[code]] then
-                c[code] = func[code]
-            elseif callable(func) then
-                c[code] = func
-            else
-                error "Invalid error handler"
-            end
-        else
-            error "Invalid error handler"
-        end
-    else
-        local t = type(code)
-        if t == "function" then
-            c[-1] = code
-        elseif t == "table" then
-            if callable(code) then
-                c[-1] = code
-            else
-                for n, f in pairs(code) do
-                    if callable(f) then
-                        c[n] = f
-                    end
-                end
-            end
-        else
-            return function(func)
-                return self:on(code, func)
-            end
-        end
-    end
+function route:on(...)
+    return named(self, 1, ...)
+end
+function route:as(...)
+    return named(self, 2, ...)
 end
 function route:dispatch(l, m)
     router.new(unpack(self)):to(location(l), method(m))

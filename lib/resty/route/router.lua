@@ -85,8 +85,8 @@ local function finish(self, status, func, ...)
 end
 local router       = {}
 router.__index = router
-function router.new(routes, rf, af, errors)
-    local self = setmetatable({ { n = 0 }, errors, routes, rf, af }, router)
+function router.new(...)
+    local self = setmetatable({ { n = 0 }, ... }, router)
     self.context = setmetatable({ route = self }, { __index = self })
     self.context.context = self.context
     return self

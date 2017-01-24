@@ -179,13 +179,21 @@ a part of `lua-resty-route`.
 * Add a more automated way to define redirects
 * Add a support for easy way to define Web Hooks routes
 * Add a support for easy way to define Server Sent Events routes
-* Add a support for "provides", e.g. renderers
+* Add a support for "provides", e.g. renderers (?)
 * Add a support for conditions, e.g. content negotiation
 * ~~Add a support for named routes~~
 * Add a support for route grouping
+* Add a support for reverse routing
 * ~~Add `\Q` and `\E` regex quoting to simple matcher~~
 * Add bootstrapping functionality from Nginx configs
 * Add tests
+
+## See Also
+
+* [lua-resty-reqargs](https://github.com/bungle/lua-resty-reqargs) — Request arguments parser
+* [lua-resty-session](https://github.com/bungle/lua-resty-session) — Session library
+* [lua-resty-template](https://github.com/bungle/lua-resty-template) — Templating engine
+* [lua-resty-validation](https://github.com/bungle/lua-resty-validation) — Validation and filtering library
 
 ## License
 

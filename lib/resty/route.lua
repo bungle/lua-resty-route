@@ -92,6 +92,45 @@ local function resolve(pattern)
     end
     return matchers.prefix, pattern
 end
+local function named(self, i, code, func)
+    local c = self[i]
+    if func then
+        local t = type(func)
+        if t == "function" then
+            c[code] = func
+        elseif t == "table" then
+            if callable[func[code]] then
+                c[code] = func[code]
+            elseif callable(func) then
+                c[code] = func
+            else
+                error "Invalid handler"
+            end
+        else
+            error "Invalid handler"
+        end
+    else
+        local t = type(code)
+        if t == "function" then
+            c[-1] = code
+        elseif t == "table" then
+            if callable(code) then
+                c[-1] = code
+            else
+                for n, f in pairs(code) do
+                    if callable(f) then
+                        c[n] = f
+                    end
+                end
+            end
+        else
+            return function(func)
+                return named(self, i, code, func)
+            end
+        end
+    end
+    return self
+end
 local function matcher(h, ...)
     if select(1, ...) then
         return create(h), ...
@@ -184,7 +223,7 @@ local function handle(self, method, pattern, func)
         (handlers[method] or http)(push, func, method)
     end
 end
-local function handler(self, ...)
+local function call(self, ...)
     local n = select("#", ...)
     if n == 3 then
         handle(self, ...)
@@ -233,45 +272,6 @@ local function handler(self, ...)
     end
     return self
 end
-local function named(self, i, code, func)
-    local c = self[i]
-    if func then
-        local t = type(func)
-        if t == "function" then
-            c[code] = func
-        elseif t == "table" then
-            if callable[func[code]] then
-                c[code] = func[code]
-            elseif callable(func) then
-                c[code] = func
-            else
-                error "Invalid handler"
-            end
-        else
-            error "Invalid handler"
-        end
-    else
-        local t = type(code)
-        if t == "function" then
-            c[-1] = code
-        elseif t == "table" then
-            if callable(code) then
-                c[-1] = code
-            else
-                for n, f in pairs(code) do
-                    if callable(f) then
-                        c[n] = f
-                    end
-                end
-            end
-        else
-            return function(func)
-                return named(self, i, code, func)
-            end
-        end
-    end
-    return self
-end
 local function index(self, n)
     local field = rawget(getmetatable(self), n)
     return field and field or function(self, ...)
@@ -279,12 +279,12 @@ local function index(self, n)
     end
 end
 filter.__index = index
-filter.__call = handler
+filter.__call = call
 function filter.new(...)
     return setmetatable({ ... }, filter)
 end
 route.__index = index
-route.__call = handler
+route.__call = call
 function route.new()
     local a, b = { n = 0 }, { n = 0 }
     return setmetatable({ {}, { n = 0 }, a, b, filter = filter.new(a, b) }, route)

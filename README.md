@@ -184,6 +184,7 @@ a part of `lua-resty-route`.
 * ~~Add a support for named routes~~
 * Add a support for route grouping
 * Add a support for reverse routing
+* Add a support for form method spoofing
 * ~~Add `\Q` and `\E` regex quoting to simple matcher~~
 * Add bootstrapping functionality from Nginx configs
 * Add tests

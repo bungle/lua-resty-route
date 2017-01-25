@@ -211,66 +211,57 @@ local function push(a, pattern)
         a[a.n] = locator(func, method, pattern)
     end
 end
-local function handle(self, method, pattern, func)
-    local list = getmetatable(self) == filter and pattern and self[1] or self[2]
-    local push = push(list, pattern)
-    func = list[func] or func
-    if array(method) then
-        for _, m in ipairs(method) do
-            (handlers[m] or http)(push, func, m)
-        end
-    else
-        (handlers[method] or http)(push, func, method)
-    end
-end
 local function call(self, ...)
     local n = select("#", ...)
     if n == 3 then
-        handle(self, ...)
+        local method, pattern, func = ...
+        local list = getmetatable(self) == filter and pattern and self[1] or self[2]
+        local push = push(list, pattern)
+        func = list[func] or func
+        if array(method) then
+            for _, m in ipairs(method) do
+                (handlers[m] or http)(push, func, m)
+            end
+        else
+            (handlers[method] or http)(push, func, method)
+        end
+        return self
     elseif n == 2 then
         local method, pattern = ...
         if routable(method) then
-            handle(self, nil, ...)
+            return self(nil, ...)
         elseif callable(pattern) then
-            handle(self, method, nil, pattern)
+            return self(method, nil, pattern)
         else
             return function(func)
-                handle(self, method, pattern, func)
-                return self
+                return self(method, pattern, func)
             end
         end
     elseif n == 1 then
         local method = ...
         if routable(method) then
             return function(func)
-                handle(self, nil, method, func)
-                return self
+                return self(nil, method, func)
             end
         elseif callable(method) then
-            handle(self, nil, nil, method)
+            return self(nil, nil, method)
         elseif object(method) then
             for pattern, func in pairs(method) do
                 if routable(pattern) then
-                    handle(self, nil, pattern, func)
+                    self(nil, pattern, func)
                 end
             end
+            return self
         else
             return function(pattern, func)
-                if func then
-                    handle(self, method, pattern, func)
-                else
-                    return function(func)
-                        handle(self, method, pattern, func)
-                        return self
-                    end
+                return func and self(method, pattern, func) or function(func)
+                    return self(method, pattern, func)
                 end
-                return self
             end
         end
     else
         error "Invalid number of arguments"
     end
-    return self
 end
 local function index(self, n)
     local field = rawget(getmetatable(self), n)

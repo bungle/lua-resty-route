@@ -117,10 +117,6 @@ exposure of a code that you don't want to be called on HTTP requests).
 
 ```lua
 route { "get", "head" } "=/users" (function(self) end)
-route { "get", "head" } "=/users" {
-    head = function(self) end,
-    get  = function(self) end
-}
 ```
 
 #### Defining Multiple Routes at Once

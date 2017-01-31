@@ -34,9 +34,6 @@ do
     if not o then o, l = pcall(require, "lfs") end
     if o then lfs = l end
 end
-local handlers = {
-    websocket = require "resty.route.handlers.websocket"
-}
 local matchers = {
     prefix  = require "resty.route.matchers.prefix",
     equals  = require "resty.route.matchers.equals",
@@ -50,12 +47,68 @@ local selectors = {
     [T] = matchers.regex,
     [A] = matchers.simple
 }
-local route, filter = {}, {}
+local http = require "resty.route.handlers.http"
+local handlers = {
+    -- Common
+    delete      = http,
+    get         = http,
+    head        = http,
+    post        = http,
+    put         = http,
+    -- Pathological
+    connect     = http,
+    options     = http,
+    trace       = http,
+    -- WebDAV
+    copy        = http,
+    lock        = http,
+    mkcol       = http,
+    move        = http,
+    propfind    = http,
+    proppatch   = http,
+    search      = http,
+    unlock      = http,
+    bind        = http,
+    rebind      = http,
+    unbind      = http,
+    acl         = http,
+    -- Subversion
+    report      = http,
+    mkactivity  = http,
+    checkout    = http,
+    merge       = http,
+    -- UPnP
+    msearch     = http,
+    notify      = http,
+    subscribe   = http,
+    unsubscribe = http,
+    -- RFC5789
+    patch       = http,
+    purge       = http,
+    -- CalDAV
+    mkcalendar  = http,
+    -- RFC2068
+    link        = http,
+    unlink      = http,
+    -- Special
+    sse         = require "resty.route.handlers.sse",
+    websocket   = require "resty.route.handlers.websocket"
+}
 local function location(l)
     return l or var.uri
 end
 local function method(m)
-    return lower(m or lower(var.http_upgrade) == "websocket" and "websocket" or var.request_method)
+    local t = type(m)
+    if t == "string" then
+        local h = lower(m)
+        return handlers[h] and h or m
+    elseif var.http_accept == "text/event-stream" then
+        return "sse"
+    elseif var.http_upgrade == "websocket" then
+        return "websocket"
+    else
+        return lower(var.request_method)
+    end
 end
 local function array(t)
     if type(t) ~= "table" then return false end
@@ -70,39 +123,68 @@ end
 local function object(t)
     return type(t) == "table" and not(array(t))
 end
-local function callable(func)
-    if type(func) == "function" then
+local function callable(f)
+    if type(f) == "function" then
         return true
     end
-    local mt = getmetatable(func)
-    return mt and mt.__call
+    local m = getmetatable(f)
+    return m and type(m.__call) == "function"
 end
-local function routable(pattern)
-    if type(pattern) ~= "string" then return false end
-    local b = byte(pattern)
-    return selectors[b] or S == b or F == b
+local function methods(m)
+    local t = type(m)
+    if t == "table" and array(m) and #m > 0 then
+        for _, n in ipairs(m) do
+            if not handlers[n] then
+                return false
+            end
+        end
+        return true
+    elseif t == "string" then
+        return not not handlers[m]
+    end
+    return false
 end
-local function resolve(pattern)
-    local b = byte(pattern)
-    if b == S then return matchers.prefix, sub(pattern, 2), true end
+local function routing(p)
+    local t = type(p)
+    if t == "table" and array(p) and #p > 0 then
+        for _, q in ipairs(p) do
+            if type(q) ~= "string" then
+                return false
+            end
+            local b = byte(q)
+            if not selectors[b] and S ~= b and F ~= b then
+                return false
+            end
+        end
+        return true
+    elseif t == "string" then
+        local b = byte(p)
+        return selectors[b] or S == b or F == b
+    else
+        return false
+    end
+end
+local function resolve(p)
+    local b = byte(p)
+    if b == S then return matchers.prefix, sub(p, 2), true end
     local s = selectors[b]
     if s then
-        if b == H or byte(pattern, 2) ~= S then return s, sub(pattern, 2) end
-        return s, sub(pattern, 3), true
+        if b == H or byte(p, 2) ~= S then return s, sub(p, 2) end
+        return s, sub(p, 3), true
     end
-    return matchers.prefix, pattern
+    return matchers.prefix, p
 end
-local function named(self, i, code, func)
-    local c = self[i]
-    if func then
-        local t = type(func)
+local function named(self, i, c, f)
+    local l = self[i]
+    if f then
+        local t = type(f)
         if t == "function" then
-            c[code] = func
+            l[c] = f
         elseif t == "table" then
-            if callable[func[code]] then
-                c[code] = func[code]
-            elseif callable(func) then
-                c[code] = func
+            if callable[f[c]] then
+                l[c] = f[c]
+            elseif callable(f) then
+                l[c] = f
             else
                 error "Invalid handler"
             end
@@ -110,22 +192,22 @@ local function named(self, i, code, func)
             error "Invalid handler"
         end
     else
-        local t = type(code)
+        local t = type(c)
         if t == "function" then
-            c[-1] = code
+            l[-1] = c
         elseif t == "table" then
-            if callable(code) then
-                c[-1] = code
+            if callable(c) then
+                l[-1] = c
             else
-                for n, f in pairs(code) do
+                for n, f in pairs(c) do
                     if callable(f) then
-                        c[n] = f
+                        l[n] = f
                     end
                 end
             end
         else
-            return function(func)
-                return named(self, i, code, func)
+            return function(f)
+                return named(self, i, c, f)
             end
         end
     end
@@ -136,145 +218,161 @@ local function matcher(h, ...)
         return create(h), ...
     end
 end
-local function locator(h, m, p)
+local function locator(l, m, p, f)
+    local n = l.n + 1
+    l.n = n
     if m then
         if p then
             local match, pattern, insensitive = resolve(p)
-            return function(method, location)
+            l[n] = function(method, location)
                 if m == method then
-                    return matcher(h, match(location, pattern, insensitive))
+                    return matcher(f, match(location, pattern, insensitive))
                 end
             end
         else
-            return function(method)
+            l[n] = function(method)
                 if m == method then
-                    return create(h)
+                    return create(f)
                 end
             end
         end
     elseif p then
         local match, pattern, insensitive = resolve(p)
-        return function(_, location)
-            return matcher(h, match(location, pattern, insensitive))
-        end
-    end
-    return function()
-        return create(h)
-    end
-end
-local function http(push, func, method)
-    local t = type(func)
-    if t == "function" then
-        push(func, method)
-    elseif t == "table" then
-        if method then
-            if callable(func[method]) then
-                push(func[method], method)
-            elseif callable(func) then
-                push(func, method)
-            elseif array(func) then
-                for _, f in ipairs(func) do
-                    if callable(f) then
-                        push(f, method)
-                    end
-                end
-            else
-                error "Invalid HTTP handler"
-            end
-        else
-            if callable(func) then
-                push(func)
-            elseif object(func) then
-                for m, f in pairs(func) do
-                    if type(m) == "string" and callable(f) then
-                        push(f, m)
-                    end
-                end
-            else
-                error "Invalid HTTP handler"
-            end
-        end
-    elseif t == "string" then
-        local ok, func = pcall(require, func)
-        if ok then
-            http(push, func, method)
-        else
-            error "Invalid HTTP handler"
+        l[n] = function(_, location)
+            return matcher(f, match(location, pattern, insensitive))
         end
     else
-        error "Invalid HTTP handler"
+        l[n] = function()
+            return create(f)
+        end
     end
 end
-local function push(a, pattern)
-    return function(func, method)
-        a.n = a.n + 1
-        a[a.n] = locator(func, method, pattern)
+local function append(l, m, p, f)
+    local mt = type(m)
+    local pt = type(p)
+    if mt == "table" and pt == "table" then
+        for _, a in ipairs(m) do
+            for _, b in ipairs(p) do
+                locator(l, a, b, f)
+            end
+        end
+    elseif mt == "table" then
+        for _, a in ipairs(m) do
+            locator(l, a, p, f)
+        end
+    elseif pt == "table" then
+        for _, a in ipairs(p) do
+            locator(l, m, a, f)
+        end
+    else
+        locator(l, m, p, f)
     end
+    return true
 end
 local function call(self, ...)
     local n = select("#", ...)
+    assert(n == 1 or n == 2 or n == 3, "Invalid number of arguments")
     if n == 3 then
-        local method, pattern, func = ...
-        local list = getmetatable(self) == filter and pattern and self[1] or self[2]
-        local push = push(list, pattern)
-        func = list[func] or func
-        if array(method) then
-            for _, m in ipairs(method) do
-                (handlers[m] or http)(push, func, m)
+        local m, p, f, o = ...
+        local l = not self.filter and p and self[1] or self[2]
+        assert(m == nil or methods(m), "Invalid method")
+        assert(p == nil or routing(p), "Invalid pattern")
+        f = l[f] or f
+        local t = type(f)
+        if t == "function" then
+            if m then
+                o = append(l, m, p, handlers[m](f)) and self
+            else
+                o = append(l, nil, p, f) and self
+            end
+        elseif t == "table" then
+            if m and p then
+                local r = handlers[m](f)
+                if type(r) == "function" then
+                    o = self(m, p, r)
+                end
+            elseif m then
+                local r = handlers[m](f)
+                if type(r) == "function" then
+                    o = self(m, p, r)
+                end
+                for x, r in pairs(f) do
+                    if routing(x) then
+                        o = self(m, x, r)
+                    end
+                end
+            elseif p then
+                for x, r in pairs(f) do
+                    if methods(x) then
+                        o = self(x, p, r)
+                    end
+                end
+            else
+                for x, r in pairs(f) do
+                    if methods(x) then
+                        o = self(x, nil, r)
+                    elseif routing(x) then
+                        o = self(nil, x,  r)
+                    end
+                end
+            end
+            if callable(f) then
+                o = append(l, m, p, f) and self
+            end
+        elseif t == "string" then
+            o, f = pcall(require, f)
+            assert(o, f)
+            self(m, p, f)
+        end
+        if o then
+            return self
+        end
+        error "Invalid function"
+    elseif n == 2 then
+        local m, p = ...
+        if methods(m) then
+            if routing(p) then
+                return function(...)
+                    return self(m, p, ...)
+                end
+            else
+                return self(m, nil, p)
+            end
+        elseif routing(m) then
+            return self(nil, ...)
+        elseif routing(p) then
+            assert(m == nil, "Invalid method")
+            return function(...)
+                return self(nil, p, ...)
             end
         else
-            (handlers[method] or http)(push, func, method)
-        end
-        return self
-    elseif n == 2 then
-        local method, pattern = ...
-        if routable(method) then
-            return self(nil, ...)
-        elseif callable(pattern) then
-            return self(method, nil, pattern)
-        else
-            return function(func)
-                return self(method, pattern, func)
+            assert(m == nil, "Invalid method")
+            assert(p == nil, "Invalid pattern")
+            return function(...)
+                return self(nil, nil, ...)
             end
         end
     elseif n == 1 then
-        local method = ...
-        if routable(method) then
-            return function(func)
-                return self(nil, method, func)
+        local m = ...
+        if methods(m) then
+            return function(...)
+                return self(m, ...)
             end
-        elseif callable(method) then
-            return self(nil, nil, method)
-        elseif object(method) then
-            for pattern, func in pairs(method) do
-                if routable(pattern) then
-                    self(nil, pattern, func)
-                end
-            end
-            return self
+        elseif routing(m) then
+            return self(nil, ...)
         else
-            return function(pattern, func)
-                return func and self(method, pattern, func) or function(func)
-                    return self(method, pattern, func)
-                end
-            end
+            return self(nil, nil, ...)
         end
-    else
-        error "Invalid number of arguments"
     end
 end
-local function index(self, n)
-    local field = rawget(getmetatable(self), n)
-    return field and field or function(self, ...)
-        return self(n, ...)
-    end
-end
-filter.__index = index
+local filter = {}
+filter.__index = filter
 filter.__call = call
 function filter.new(...)
     return setmetatable({ ... }, filter)
 end
-route.__index = index
+local route = {}
+route.__index = route
 route.__call = call
 function route.new()
     local a, b = { n = 0 }, { n = 0 }
@@ -284,14 +382,14 @@ function route:match(location, pattern)
     local match, pattern, insensitive = resolve(pattern)
     return match(location, pattern, insensitive)
 end
-function route:clean(location)
-    if type(location) ~= "string" or location == "" or location == "/" or location == "." or location == ".." then return "/" end
-    local s = find(location, "/", 1, true)
-    if not s then return "/" .. location end
+function route:clean(l)
+    if type(l) ~= "string" or l == "" or l == "/" or l == "." or l == ".." then return "/" end
+    local s = find(l, "/", 1, true)
+    if not s then return "/" .. l end
     local i, n, t = 1, 1, {}
     while s do
         if i < s then
-            local f = sub(location, i, s - 1)
+            local f = sub(l, i, s - 1)
             if f == ".." then
                 n = n > 1 and n - 1 or 1
                 t[n] = nil
@@ -301,9 +399,9 @@ function route:clean(location)
             end
         end
         i = s + 1
-        s = find(location, "/", i, true)
+        s = find(l, "/", i, true)
     end
-    local f = sub(location, i)
+    local f = sub(l, i)
     if f == ".." then
         n = n > 1 and n - 1 or 1
         t[n] = nil
@@ -316,30 +414,30 @@ end
 function route:use(...)
     return self.filter(...)
 end
-function route:fs(path, location)
+function route:fs(p, l)
     assert(lfs, "Lua file system (LFS) library was not found")
-    path = path or var.document_root
-    if not path then return end
-    if byte(path, -1) == F then
-        path = sub(path, 1, #path - 1)
+    p = p or var.document_root
+    if not p then return end
+    if byte(p, -1) == F then
+        p = sub(p, 1, #p - 1)
     end
-    location = location or ""
-    if byte(location) == F then
-        location = sub(location, 2)
+    l = l or ""
+    if byte(l) == F then
+        l = sub(l, 2)
     end
-    if byte(location, -1) == F then
-        location = sub(location, 1, #location - 1)
+    if byte(l, -1) == F then
+        l = sub(l, 1, #l - 1)
     end
     local dir = lfs.dir
     local attributes = lfs.attributes
     local dirs = { n = 0 }
-    for file in dir(path) do
+    for file in dir(p) do
         if file ~= "." and file ~= ".." then
-            local f = path .. "/" .. file
+            local f = p .. "/" .. file
             local mode = attributes(f).mode
             if mode == "directory" then
                 dirs.n = dirs.n + 1
-                dirs[dirs.n] = { f, location .. "/" .. file }
+                dirs[dirs.n] = { f, l .. "/" .. file }
             elseif mode == "file" or mode == "link" and sub(file, -4) == ".lua" then
                 local b = sub(file, 1, #file - 4)
                 local m
@@ -349,8 +447,8 @@ function route:fs(path, location)
                     b = sub(b, 1, -i-1)
                 end
                 local l = { "=*/" }
-                if location ~= "" then
-                    l[2] = location
+                if l ~= "" then
+                    l[2] = l
                     if b ~= "index" then
                         l[3] = "/"
                         l[4] = b
@@ -377,5 +475,12 @@ function route:as(...)
 end
 function route:dispatch(l, m)
     router.new(unpack(self)):to(location(l), method(m))
+end
+for h in pairs(handlers) do
+    local f = function(self, ...)
+        return self(h, ...)
+    end
+     route[h] = f
+    filter[h] = f
 end
 return route

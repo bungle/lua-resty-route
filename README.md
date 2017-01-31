@@ -80,6 +80,13 @@ route(...)
 route:method(...)
 ```
 
+or
+
+```lua
+route(method, pattern, function)
+route:method(pattern, function)
+```
+
 e.g.:
 
 ```lua
@@ -87,10 +94,11 @@ route("get", "/", function(self) end)
 route:get("/", function(self) end)
 ```
 
-The first example takes one to three arguments, and the second one takes one or
-two arguments. Only the first function argument is mandatory. That's why we can
-call these functions in a quite flexible ways. Next we look at different ways to
-call these functions.
+Only the first function argument is mandatory. That's why we can
+call these functions in a quite flexible ways. For some `methods`,
+e.g. websocket, we can pass a `table` instead of a `function` as
+a route handler. Next we look at different ways to call these
+functions.
 
 #### Defining Routes as a Table
 
@@ -108,10 +116,6 @@ route("=/users", users)
 route "=/users"  "controllers.users"
 route("=/users", "controllers.users")
 ```
-
-**Note:** be careful with this as all the callable string keys in that
-table will be used as a route handlers (aka this may lead to unwanted
-exposure of a code that you don't want to be called on HTTP requests).
 
 #### Defining Multiple Methods at Once
 

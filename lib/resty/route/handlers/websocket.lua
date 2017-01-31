@@ -1,7 +1,10 @@
-local server = require "resty.websocket.server"
-local websocket = {}
-return function(push, func)
-
+local server       = require "resty.websocket.server"
+local setmetatable = setmetatable
+local type         = type
+local websocket    = {}
+return function(f)
+    return function()
+    end
 end
 -- TODO: Rewrite needed
 --[[

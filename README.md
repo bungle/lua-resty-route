@@ -83,8 +83,8 @@ route:method(...)
 or
 
 ```lua
-route(method, pattern, function)
-route:method(pattern, function)
+route(method, pattern, func)
+route:method(pattern, func)
 ```
 
 e.g.:

@@ -34,7 +34,7 @@ Prefix   | Matcher | Case-sensitive | Used by Default
 
 ## Routing
 
-There are many different ways to define routes in `lua-resty-template`.
+There are many different ways to define routes in `lua-resty-route`.
 It can be said that it is somewhat a Lua DSL for defining routes.
 
 To define routes, you first need a new instance of route. This instance

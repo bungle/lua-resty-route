@@ -303,7 +303,44 @@ route(function(self) end)
 
 ### File System Routing
 
+File system routing is based on a file system tree. This could be
+considered as a routing by a convention. File system routing depends
+on either [LuaFileSystem](https://github.com/keplerproject/luafilesystem)
+module or a preferred and LFS compatible
+[ljsyscall](https://github.com/justincormack/ljsyscall).
+
+As an example, let's consider that we do have this kind of file tree:
+
+```
+/routing/
+ ├─ index.lua 
+ ├─ users.lua
+ └─ users/
+ │  ├─ view@get.lua
+ │  ├─ edit@post.lua
+ │  └─ #/
+ │     └─ index.lua
+ └─ page/
+    └─ #.lua
+```
+
+TBD. (the hashtag id routing is not yet implemented).
+
 ### Named Routes
+
+You can define named route handlers, and then reuse them in actual routes.
+
+```lua
+route:as "@home" (function(self) end)
+```
+
+(use of `@` as a prefix for a named route is optinal)
+
+And here we actually attach it to a route:
+
+```lua
+route:get "/" "@home"
+```
 
 ### Dispatching
 
@@ -389,6 +426,7 @@ a part of `lua-resty-route`.
 * Add a support for reverse routing
 * Add a support for form method spoofing
 * Add a support for client connection abort event handler (`ngx.on_abort`)
+* Add a support for some simple patterns (e.g. `#` for a number) to file system router
 * ~~Add `\Q` and `\E` regex quoting to simple matcher~~
 * Add bootstrapping functionality from Nginx configs
 * Add tests

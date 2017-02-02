@@ -110,7 +110,7 @@ This will match location paths like:
 * `/files/test.txt` etc.
 
 In that case the provided function (that answers only HTTP `GET`
-requests in this example), will be called also with these to captures
+requests in this example), will be called also with these captures:
 `"test"` (function argument `file`) and `txt` (function argument `ext`).
 
 For many, the regular expressions are more familiar and more powerfull. 

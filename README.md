@@ -366,7 +366,8 @@ We will find the right event handler in this order:
 
 Only one of these is called per event.
 
-It is possible that we will add other handlers in a future we you could hook on.
+It is possible that we will add other handlers in a future where you could
+hook on.
 
 ## Roadmap
 

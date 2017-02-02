@@ -377,7 +377,7 @@ Some groups are predefined, e.g.:
 * `server error`, status codes 500 – 599
 * `error`, status codes 400 – 599
 
-You may use this like this:
+You may use groups like this:
 
 ```lua
 route:on "error" (function(self, code) end)

@@ -299,6 +299,35 @@ route("/", function(self) end)
 route(function(self) end)
 ```
 
+#### Going Crazy with Routing
+
+```lua
+route:as "@home" (function(self) end)
+route {
+    get = {
+        ["=/"] = "@home",
+        ["=/users"] = function(self) end
+    },
+    ["=/help"] = function(self) end,
+    [{ "post", "put"}] = {
+        ["=/me"] = function(self)
+        end
+    },
+    ["=/me"] = {
+        [{ "get", "head" }] = function(self) end
+    },
+    [{ "/files", "/cache" }] = {
+        -- requiring controllers.filesystem return a function
+        [{"get", "head" }] = "controllers.filesystem"
+    }
+}
+```
+
+As you may see this is pretty freaky. But it doesn't actually
+stop here. I haven't even mentioned things like callable Lua
+tables (aka tables with metamethod `__call`) or web sockets
+routing. They are supported as well.
+
 ### WebSockets Routing
 
 ### File System Routing
@@ -429,7 +458,7 @@ a part of `lua-resty-route`.
 * ~~Add a support for named routes~~
 * Add a support for route grouping
 * Add a support for reverse routing
-* Add a support for router:to to route to a named route
+* Add a support for `router:to` to route to a named route
 * Add a support for form method spoofing
 * Add a support for client connection abort event handler (`ngx.on_abort`)
 * Add a support for some simple patterns (e.g. `#` for a number) to file system router

@@ -196,14 +196,13 @@ local function named(self, i, c, f)
         if t == "function" then
             l[-1] = c
         elseif t == "table" then
+            for n, f in pairs(c) do
+                if callable(f) then
+                    l[n] = f
+                end
+            end
             if callable(c) then
                 l[-1] = c
-            else
-                for n, f in pairs(c) do
-                    if callable(f) then
-                        l[n] = f
-                    end
-                end
             end
         else
             return function(f)

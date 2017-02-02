@@ -316,6 +316,58 @@ or per route basis.
 
 ## Events
 
+Events allow you to register specialized handlers for different HTTP status
+codes or other predefined event codes. There can be only one handler for each
+code or code group.
+
+You can for example define `404` aka route not found handler like this:
+
+```lua
+route:on(404, function(self)
+end)
+```
+
+Some groups are predefined, e.g.:
+
+* `info`, status codes 100 – 199
+* `success`, status codes 200 – 299
+* `redirect`, status codes 300 – 399
+* `client error`, status codes 400 – 499
+* `server error`, status codes 500 – 599
+* `error`, status codes 400 – 599
+
+You may use this like this:
+
+```lua
+route:on "error" (function(self, code) end)
+```
+
+You can also define multiple in one go:
+
+```lua
+route:on {
+    error   = function(self, code) end,
+    success = function(self, code) end,
+    [302]   = function(self) end
+}
+```
+
+Then there is a generic catch-all event handler:
+
+```lua
+route:on(function(self, code) end)
+```
+
+We will find the right event handler in this order:
+
+1. if there is a specific handler for a specific code, we will call that
+2. if there is a group handler for specific code, we will call that
+3. if there is a catch-all handler, we will call that
+
+Only one of these is called per event.
+
+It is possible that we will add other handlers in a future we you could hook on.
+
 ## Roadmap
 
 This is a small collection of ideas that may or may not be implemented as
@@ -336,6 +388,7 @@ a part of `lua-resty-route`.
 * Add a support for route grouping
 * Add a support for reverse routing
 * Add a support for form method spoofing
+* Add a support for client connection abort event handler (`ngx.on_abort`)
 * ~~Add `\Q` and `\E` regex quoting to simple matcher~~
 * Add bootstrapping functionality from Nginx configs
 * Add tests

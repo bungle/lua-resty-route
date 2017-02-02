@@ -323,8 +323,7 @@ code or code group.
 You can for example define `404` aka route not found handler like this:
 
 ```lua
-route:on(404, function(self)
-end)
+route:on(404, function(self) end)
 ```
 
 Some groups are predefined, e.g.:

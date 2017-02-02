@@ -316,15 +316,15 @@ local function call(self, ...)
             elseif p then
                 for x, r in pairs(f) do
                     if methods(x) then
-                        o = self(x, p, r)
+                        o = self(x, p, r) or o
                     end
                 end
             else
                 for x, r in pairs(f) do
                     if methods(x) then
-                        o = self(x, nil, r)
+                        o = self(x, nil, r) or o
                     elseif routing(x) then
-                        o = self(nil, x,  r)
+                        o = self(nil, x,  r) or o
                     end
                 end
             end

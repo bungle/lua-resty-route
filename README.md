@@ -342,6 +342,11 @@ And here we actually attach it to a route:
 route:get "/" "@home"
 ```
 
+Named routes must be defined before referencing them in routes.
+There are or will be other uses to named routers as well. On todo
+list there are things like reverse routing and route forwarding to
+a named route.
+
 ### Dispatching
 
 ### Bootstrapping
@@ -424,6 +429,7 @@ a part of `lua-resty-route`.
 * ~~Add a support for named routes~~
 * Add a support for route grouping
 * Add a support for reverse routing
+* Add a support for router:to to route to a named route
 * Add a support for form method spoofing
 * Add a support for client connection abort event handler (`ngx.on_abort`)
 * Add a support for some simple patterns (e.g. `#` for a number) to file system router

@@ -116,7 +116,7 @@ requests in this example), will be called also with these to captures
 For many, the regular expressions are more familiar and more powerfull. 
 That is what we will look next.
 
-#### Regex Matcher
+### Regex Matcher
 
 Regex or regular expressions is a common way to do pattern matching.
 OpenResty has support for PCRE compatible regualar expressions, and
@@ -139,7 +139,7 @@ route "~*^/files/(\\w+)[.](\\w+)$" {
 }
 ```
 
-#### Simple Matcher
+### Simple Matcher
 
 This matcher is a specialized and limited version of a Regex matcher
 with one advantage. It handles type conversions automatically, right
@@ -167,6 +167,9 @@ Of course there is a case-insensitive version for this matcher as well:
 ```lua
 route:get "@*/users/:number" (function(self, id) end)
 ```
+
+The simple matcher always matches the location from the beginning to end (partial
+matches are not considered).
 
 ## Routing
 

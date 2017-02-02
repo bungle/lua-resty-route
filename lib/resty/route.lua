@@ -246,28 +246,50 @@ local function locator(l, m, p, f)
             return create(f)
         end
     end
+    return true
 end
 local function append(l, m, p, f)
+    local o
     local mt = type(m)
     local pt = type(p)
     if mt == "table" and pt == "table" then
         for _, a in ipairs(m) do
             for _, b in ipairs(p) do
-                locator(l, a, b, f)
+                local c = handlers[a](f)
+                if type(c) == "function" then
+                    o = locator(l, a, b, c)
+                end
             end
         end
     elseif mt == "table" then
         for _, a in ipairs(m) do
-            locator(l, a, p, f)
+            local b = handlers[a](f)
+            if type(b) == "function" then
+                o = locator(l, a, p, b)
+            end
         end
     elseif pt == "table" then
         for _, a in ipairs(p) do
-            locator(l, m, a, f)
+            if m then
+                local b = handlers[m](f)
+                if type(b) == "function" then
+                    o = locator(l, m, a, b)
+                end
+            else
+                o = locator(l, nil, a, f)
+            end
         end
     else
-        locator(l, m, p, f)
+        if m then
+            local a = handlers[m](f)
+            if type(a) == "function" then
+                o = locator(l, m, p, a)
+            end
+        else
+            o = locator(l, m, p, f)
+        end
     end
-    return true
+    return o
 end
 local function call(self, ...)
     local n = select("#", ...)
@@ -280,27 +302,17 @@ local function call(self, ...)
         f = l[f] or f
         local t = type(f)
         if t == "function" then
-            if m then
-                o = append(l, m, p, handlers[m](f)) and self
-            else
-                o = append(l, nil, p, f) and self
-            end
+            o = append(l, m, p, f)
         elseif t == "table" then
             if m and p then
-                local r = handlers[m](f)
-                if type(r) == "function" then
-                    o = self(m, p, r)
-                end
+                o = append(l, m, p, f)
             elseif m then
-                local r = handlers[m](f)
-                if type(r) == "function" then
-                    o = self(m, p, r)
-                end
                 for x, r in pairs(f) do
                     if routing(x) then
                         o = self(m, x, r)
                     end
                 end
+                o = append(l, m, p, f) or o
             elseif p then
                 for x, r in pairs(f) do
                     if methods(x) then
@@ -317,12 +329,12 @@ local function call(self, ...)
                 end
             end
             if callable(f) then
-                o = append(l, m, p, f) and self
+                o = append(l, m, p, f) or o
             end
         elseif t == "string" then
             o, f = pcall(require, f)
             assert(o, f)
-            self(m, p, f)
+            o = self(m, p, f) and true
         end
         if o then
             return self

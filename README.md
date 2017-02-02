@@ -32,6 +32,142 @@ Prefix   | Matcher | Case-sensitive | Used by Default
 
 ¹ Lua `string.match` can be case-sensitive or case-insensitive.
 
+### Prefix Matcher
+
+Prefix, as the name tells, matches only the prefix of the actual location.
+Prefix matcher takes only static string prefixes. If you need anything more
+fancy, take a look at regex matcher. Prefix can be matched case-insensitively
+by prefixing the prefix with `*`, :-). Let's see this in action:
+
+```lua
+route "/users" (function(self) end)
+```
+
+This route matches locations like:
+
+* `/users`
+* `/users/edit`
+* `/users_be_aware`
+
+But it **doesn't** match location paths like:
+
+* `/Users`
+* `/users/EDIT`
+
+But those can be still be matched in case-insensitive way:
+
+```lua
+route "*/users" (function(self) end)
+```
+
+### Equals Matcher
+
+This works the same as the prefix matcher, but with this
+we match the exact location, to use this matcher, prefix
+the route with `=`:
+
+```lua
+route "=/users" {
+    get = function(self) end
+}
+```
+
+This route matches only this location:
+
+* `/users` 
+
+
+Case-insensitive variant can be used also:
+
+```lua
+route "=*/users" {
+    get = function(self) end
+}
+```
+
+And this of course matches locations like:
+
+* `/users`
+* `/USERS`
+* `/usErs`
+
+### Match Matcher
+
+This matcher matches patters using Lua's `string.match` function. Nice
+thing about this matcher is that it accepts patterns and also provides
+captures. Check Lua's documentation about possible ways to define
+[patterns](https://www.lua.org/manual/5.1/manual.html#5.4.1). Here are
+some examples:
+
+```lua
+route "#/files/(%w+)[.](%w+)" {
+    get = function(self, file, ext) end
+}
+```
+
+This will match location paths like:
+
+* `/files/test.txt` etc.
+
+In that case the provided function (that answers only HTTP `GET`
+requests in this example), will be called also with these to captures
+`"test"` (function argument `file`) and `txt` (function argument `ext`).
+
+For many, the regular expressions are more familiar and more powerfull. 
+That is what we will look next.
+
+#### Regex Matcher
+
+Regex or regular expressions is a common way to do pattern matching.
+OpenResty has support for PCRE compatible regualar expressions, and
+this matcher in particular, uses `ngx.re.match` function:
+
+```lua
+route "~^/files/(\\w+)[.](\\w+)$" {
+    get = function(self, file, ext) end
+}
+```
+
+As with the Match matcher example above, the end results are the same
+and the function will be called with the captures.
+
+For Regex matcher we also have case-insensitive version:
+
+```lua
+route "~*^/files/(\\w+)[.](\\w+)$" {
+    get = function(self, file, ext) end
+}
+```
+
+#### Simple Matcher
+
+This matcher is a specialized and limited version of a Regex matcher
+with one advantage. It handles type conversions automatically, right
+now it only supports integer conversion to Lua number. For example:
+
+```lua
+route:get "@/users/:number" (function(self, id) end)
+```
+
+You could have location path like:
+
+* `/users/45`
+
+The function above will get `45` as a Lua `number`.
+
+Supported simple capturers are:
+
+* `:string`, that is equal to this regex `[^/]+` (one or more chars, not including `/`)
+* `:number`, that is equal to this regex `\d+` (one or more digits)
+
+In future, we may add other capture shortcuts.
+
+Of course there is a case-insensitive version for this matcher as well:
+
+```lua
+route:get "@*/users/:number" (function(self, id) end)
+```
+
 ## Routing
 
 There are many different ways to define routes in `lua-resty-route`.
@@ -49,6 +185,7 @@ Now that we do have this `route` instance, we may continue to a next
 section, [HTTP Routing](#http-routing).
 
 **Note:** Routes are tried in the order they are added when dispatched.
+This differs on how Nginx itself handles the `location` blocks.
 
 ### Route Arguments
 
@@ -113,8 +250,19 @@ local users = {
 }
 route "=/users" (users)
 route("=/users", users)
+```
+
+#### Using Lua Packages for Routing
+
+```lua
 route "=/users"  "controllers.users"
 route("=/users", "controllers.users")
+```
+
+These are same as:
+
+```lua
+route("=/users", require "controllers.users")
 ```
 
 #### Defining Multiple Methods at Once

@@ -317,7 +317,7 @@ route {
         [{ "get", "head" }] = function(self) end
     },
     [{ "/files", "/cache" }] = {
-        -- requiring controllers.filesystem return a function
+        -- requiring controllers.filesystem returns a function
         [{"get", "head" }] = "controllers.filesystem"
     }
 }

@@ -448,7 +448,7 @@ function route:fs(p, l)
             local mode = attributes(f).mode
             if mode == "directory" then
                 dirs.n = dirs.n + 1
-                dirs[dirs.n] = { f, l .. "/" .. file }
+                dirs[dirs.n] = { f, file == "#" and (l .. "/:number") or (l .. "/" .. file) }
             elseif mode == "file" or mode == "link" and sub(file, -4) == ".lua" then
                 local b = sub(file, 1, #file - 4)
                 local m

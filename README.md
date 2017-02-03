@@ -188,9 +188,7 @@ Now that we do have this `route` instance, we may continue to a next
 section, [HTTP Routing](#http-routing).
 
 **Note:** Routes are tried in the order they are added when dispatched.
-This differs on how Nginx itself handles the `location` blocks.
-
-### Route Arguments
+This differs from how Nginx itself handles the `location` blocks.
 
 ### HTTP Routing
 
@@ -367,6 +365,26 @@ And here we actually attach it to a route:
 
 ```lua
 route:get "/" "@home"
+```
+
+You can also define multiple named routes in a one go:
+
+```lua
+route:as {
+    home    = function(self) end,
+    signin  = function(self) end,
+    signout = function(self) end
+}
+```
+
+or if you want to use prefixes:
+
+```lua
+route:as {
+    ["@home"]    = function(self) end,
+    ["@signin"]  = function(self) end,
+    ["@signout"] = function(self) end
+}
 ```
 
 Named routes must be defined before referencing them in routes.

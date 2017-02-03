@@ -194,7 +194,7 @@ This differs on how Nginx itself handles the `location` blocks.
 
 ### HTTP Routing
 
-HTTP routing is a most common thing to do in web related routing. That's
+HTTP routing is the most common thing to do in web related routing. That's
 why HTTP routing is the default way to route in `lua-resty-route`. Other
 types of routing include e.g. [WebSockets routing](#websockets-routing).
 
@@ -410,7 +410,7 @@ You may use groups like this:
 route:on "error" (function(self, code) end)
 ```
 
-You can also define multiple in one go:
+You can also define multiple event handlers in a one go:
 
 ```lua
 route:on {

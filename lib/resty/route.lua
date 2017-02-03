@@ -457,19 +457,28 @@ function route:fs(p, l)
                     m = sub(b, -i+1)
                     b = sub(b, 1, -i-1)
                 end
-                local p = { "=*/" }
+                local p = { "@*/" }
                 if l ~= "" then
                     p[2] = l
                     if b ~= "index" then
-                        p[3] = "/"
-                        p[4] = b
+                        if b == "#" then
+                            p[3] = "/:number"
+                        else
+                            p[3] = "/"
+                            p[4] = b
+                        end
                     end
                 else
                     if b ~= "index" then
-                        p[2] = b
+                        if b == "#" then
+                            p[2] = ":number"
+                        else
+                            p[2] = b
+                        end
                     end
                 end
-                self(p, concat(l), dofile(f))
+                f = dofile(f)
+                self(m, concat(p), f)
             end
         end
     end

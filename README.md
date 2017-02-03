@@ -461,7 +461,7 @@ a part of `lua-resty-route`.
 * Add a support for `router:to` to route to a named route
 * Add a support for form method spoofing
 * Add a support for client connection abort event handler (`ngx.on_abort`)
-* Add a support for some simple patterns (e.g. `#` for a number) to file system router
+* ~~Add a support for some simple patterns (e.g. `#` for a number) to file system router~~
 * ~~Add `\Q` and `\E` regex quoting to simple matcher~~
 * Add bootstrapping functionality from Nginx configs
 * Add tests

@@ -353,8 +353,6 @@ As an example, let's consider that we do have this kind of file tree:
     └─ #.lua
 ```
 
-TBD. (the hashtag id routing is not yet implemented).
-
 ### Named Routes
 
 You can define named route handlers, and then reuse them in actual routes.

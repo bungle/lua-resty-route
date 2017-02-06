@@ -158,7 +158,7 @@ The function above will get `45` as a Lua `number`.
 Supported simple capturers are:
 
 * `:string`, that is equal to this regex `[^/]+` (one or more chars, not including `/`)
-* `:number`, that is equal to this regex `\d+` (one or more digits)
+* `:number`, that is equal to this regex `\d+` (one or more digits that can be turned to Lua number using `tonumber` function)
 
 In future, we may add other capture shortcuts.
 

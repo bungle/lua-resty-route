@@ -459,6 +459,16 @@ reverse order:
 7. middleware 3 resumes
 8. middleware 1 resumes
 
+The order of middleware is by scope:
+1. request level middleware is executed first
+2. router level middleware is executed second
+
+If there are multiple requet or router level middleware, then they will be
+executed the same order they were added to a specific scope. Yielded middleware
+is executed in reverse order.
+
+Internally we do use Lua's great `coroutines`.
+
 We are going to support a bunch of predefined middleware in a future.
 
 ## Events

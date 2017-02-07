@@ -450,11 +450,9 @@ decides to `exit`, but we do always try to run after filters for those
 middleware that already did run, and yielded. But we will call them in
 reverse order:
 
-1. middleware 1 runs
-2. middleware 1 yields
+1. middleware 1 runs and yields
 3. middleware 2 runs (and finishes)
-4. middleware 3 runs
-5. middleware 3 yields
+4. middleware 3 runs and yields
 6. router runs
 7. middleware 3 resumes
 8. middleware 1 resumes
@@ -465,7 +463,7 @@ The order of middleware is by scope:
 
 If there are multiple requet or router level middleware, then they will be
 executed the same order they were added to a specific scope. Yielded middleware
-is executed in reverse order.
+is executed in reverse order. Yielded middleware will only be resumed once.
 
 Internally we do use Lua's great `coroutines`.
 

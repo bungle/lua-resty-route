@@ -453,9 +453,9 @@ reverse order:
 1. middleware 1 runs and yields
 3. middleware 2 runs (and finishes)
 4. middleware 3 runs and yields
-6. router runs
-7. middleware 3 resumes
-8. middleware 1 resumes
+5. router runs
+6. middleware 3 resumes
+7. middleware 1 resumes
 
 The order of middleware is by scope:
 1. request level middleware is executed first

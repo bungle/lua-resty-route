@@ -399,7 +399,67 @@ a named route.
 ## Middleware
 
 Middleware in `lua-resty-route` can be defined on either on per request
-or per route basis.
+or per route basis. Middleware are filters that you can add to the request
+processing pipeline. As `lua-resty-route` tries to be as unopionated as
+possible we don't really restrict what the filters do or how they have to
+be written. Middleware can be inserted just flexible as routes, and they
+actually do share much of the logic. With one impotant difference. You can
+have multiple middleware on the pipeline whereas only one matchin route
+will be executed. The middleware can also be yielded (`coroutine.yield`),
+and that allows code to be run before and after the router (you can yield
+a router as well, but that will never be resumed). If you don't yield,
+then the middleware is considered as a before filter.
+
+The most common type of Middleware is request level middleware:
+
+```lua
+route:use(function(self)
+    -- This code will be run before router:
+    -- ...
+    coroutine.yield()
+    -- This code will be run after the router:
+    -- ...
+end)
+```
+
+Now, as you we already hinted, you may add filters to specific routes as well:
+
+```lua
+route.filter "=/" (function(self)
+    -- this middleware will only be called on a specific route
+end)
+```
+
+You can use the same rules as with routing there, e.g.
+
+```lua
+route.filter:post "middleware.csrf"
+```
+
+Of course you can also do things like:
+
+```lua
+route.filter:delete "@/users/:number" (function(self, id)
+    -- here we can say prevent deleting the user who
+    -- issued the request or something.
+end)
+```
+
+All the matching middleware is run on every request, unless one of them
+decides to `exit`, but we do always try to run after filters for those
+middleware that already did run, and yielded. But we will call them in
+reverse order:
+
+1. middleware 1 runs
+2. middleware 1 yields
+3. middleware 2 runs (and finishes)
+4. middleware 3 runs
+5. middleware 3 yields
+6. router runs
+7. middleware 3 resumes
+8. middleware 1 resumes
+
+We are going to support a bunch of predefined middleware in a future.
 
 ## Events
 

@@ -2,6 +2,7 @@ local encode       = require "cjson.safe".encode
 local setmetatable = setmetatable
 local resume       = coroutine.resume
 local status       = coroutine.status
+local yield        = coroutine.yield
 local pcall        = pcall
 local type         = type
 local next         = next
@@ -90,6 +91,9 @@ function router.new(...)
     self.context = setmetatable({ route = self }, { __index = self })
     self.context.context = self.context
     return self
+end
+function router:yield(...)
+    yield(...)
 end
 function router:redirect(uri, status)
     status = status or HTTP_302

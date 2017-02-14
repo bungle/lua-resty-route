@@ -416,7 +416,7 @@ The most common type of Middleware is request level middleware:
 route:use(function(self)
     -- This code will be run before router:
     -- ...
-    coroutine.yield()
+    self:yield() -- or coroutine.yield()
     -- This code will be run after the router:
     -- ...
 end)

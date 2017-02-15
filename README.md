@@ -311,7 +311,7 @@ route {
         ["=/me"] = function(self)
         end
     },
-    ["=/me"] = {
+    ["=/you"] = {
         [{ "get", "head" }] = function(self) end
     },
     [{ "/files", "/cache" }] = {

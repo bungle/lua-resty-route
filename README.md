@@ -458,6 +458,7 @@ reverse order:
 7. middleware 1 resumes
 
 The order of middleware is by scope:
+
 1. request level middleware is executed first
 2. router level middleware is executed second
 

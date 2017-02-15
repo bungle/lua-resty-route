@@ -52,7 +52,7 @@ This route matches locations like:
 But it **doesn't** match location paths like:
 
 * `/Users`
-* `/users/EDIT`
+* `/USERS/EDIT`
 
 But those can be still be matched in case-insensitive way:
 

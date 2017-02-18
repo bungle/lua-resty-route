@@ -351,6 +351,83 @@ As an example, let's consider that we do have this kind of file tree:
     └─ #.lua
 ```
 
+This file tree will provide you with the following routes:
+
+- `@*/` → `index.lua`
+- `@*/users` → `users.lua`
+- `@*/users/view` → `users/view@get.lua` (only GET requests are routed here)
+- `@*/users/edit` → `users/edit@post.lua` (only POST requests are routed here)
+- `@*/users/:number` → `users/#/index.lua`
+- `@*/page/:number` → `page/#.lua`
+
+The files could look like this (just an example):
+
+`index.lua`:
+
+```lua
+return {
+    get  = function(self) end,
+    post = function(self) end
+}
+```
+
+`users.lua`:
+
+```lua
+return {
+    get    = function(self) end,
+    post   = function(self) end,
+    delete = function(self) end
+}   
+```
+
+`users/view@get.lua`:
+
+```lua
+return function(self) end
+```
+
+`users/edit@post.lua`:
+
+```lua
+return function(self) end
+```
+
+`users/#/index.lua`:
+
+```lua
+return {
+    get    = function(self, id) end,
+    put    = function(self, id) end,
+    post   = function(self, id) end,
+    delete = function(self, id) end
+}
+```
+
+`page/#.lua`:
+
+```lua
+return {
+    get    = function(self, id) end,
+    put    = function(self, id) end,
+    post   = function(self, id) end,
+    delete = function(self, id) end
+}
+```
+
+To define routes based on file system tree you will need to call `route:fs`
+function:
+
+```lua
+-- Here we assume that you do have /routing directory
+-- on your file system. You may use whatever path you
+-- like, absolute or relative.
+route:fs "/routing"
+```
+
+Using file system routing you can just add new files to file system tree,
+and they way be added automatically as a routes.
+
 ### Named Routes
 
 You can define named route handlers, and then reuse them in actual routes.
@@ -359,7 +436,7 @@ You can define named route handlers, and then reuse them in actual routes.
 route:as "@home" (function(self) end)
 ```
 
-(use of `@` as a prefix for a named route is optinal)
+(the use of `@` as a prefix for a named route is optional)
 
 And here we actually attach it to a route:
 

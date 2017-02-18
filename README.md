@@ -499,7 +499,7 @@ route:use(function(self)
 end)
 ```
 
-Now, as you we already hinted, you may add filters to specific routes as well:
+Now, as you were already hinted, you may add filters to specific routes as well:
 
 ```lua
 route.filter "=/" (function(self)

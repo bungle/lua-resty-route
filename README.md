@@ -426,7 +426,7 @@ route:fs "/routing"
 ```
 
 Using file system routing you can just add new files to file system tree,
-and they way be added automatically as a routes.
+and they will be added automatically as a routes.
 
 ### Named Routes
 

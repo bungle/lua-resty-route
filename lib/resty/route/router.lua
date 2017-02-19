@@ -1,5 +1,6 @@
 local encode       = require "cjson.safe".encode
 local setmetatable = setmetatable
+local create       = coroutine.create
 local resume       = coroutine.resume
 local status       = coroutine.status
 local yield        = coroutine.yield
@@ -36,13 +37,11 @@ end
 local function execute(self, i, t, ...)
     if t then process(self, i, t, resume(t, self.context, ...)) end
 end
-local function go(self, i, location, method)
-    self.location = location
-    self.method = method
+local function go(self, i)
     local a = self[i]
     local n = a.n
     for j=1,n do
-        execute(self, i, a[j](method, location))
+        execute(self, i, a[j](self.method, self.location))
     end
 end
 local function finish(self, status, func, ...)
@@ -52,6 +51,8 @@ local function finish(self, status, func, ...)
             local f
             if t[status] then
                 f = t[status]
+            elseif status == 499 and t.abort then
+                f = t.abort
             elseif status >= 100 and status <= 199 and t.info then
                 f = t.info
             elseif status >= 200 and status <= 299 and t.success then
@@ -110,6 +111,9 @@ end
 function router:done()
     return self:exit(HTTP_200)
 end
+function router:abort()
+    return self:exit(HTTP_200)
+end
 function router:fail(error, code)
     if type(error) == "string" then
         log(ERR, error)
@@ -118,12 +122,19 @@ function router:fail(error, code)
 end
 function router:to(location, method)
     method = method or "get"
+    self.location = location
+    self.method = method
     if self[5] then
-        go(self, 5, location, method)
+        go(self, 5)
         self[5] = nil
     end
-    go(self, 4, location, method)
-    go(self, 3, location, method)
+    go(self, 4)
+    local named = self[3][location]
+    if named then
+        execute(self, 3, create(named))
+    else
+        go(self, 3)
+    end
     self:fail(HTTP_404)
 end
 function router:render(content, context)

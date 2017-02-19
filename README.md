@@ -618,9 +618,9 @@ a part of `lua-resty-route`.
 * Add a support for "provides", e.g. renderers (?)
 * Add a support for conditions, e.g. content negotiation
 * ~~Add a support for named routes~~
-* Add a support for route grouping
+* Add a support for route grouping (already possible on Nginx at config level)
 * Add a support for reverse routing
-* Add a support for `router:to` to route to a named route
+* ~~Add a support for `router:to` to route to a named route~~
 * Add a support for form method spoofing
 * Add a support for client connection abort event handler (`ngx.on_abort`)
 * ~~Add a support for some simple patterns (e.g. `#` for a number) to file system router~~

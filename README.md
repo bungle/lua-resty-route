@@ -606,7 +606,7 @@ hook on.
 This is a small collection of ideas that may or may not be implemented as
 a part of `lua-resty-route`.
 
-* Add more documentation
+* Add documentation
 * Add tests
 * Rewrite current middleware and add new ones
 * Rewrite current websocket handler
@@ -623,9 +623,8 @@ a part of `lua-resty-route`.
 * Add a support for form method spoofing
 * Add a support for client connection abort event handler (`ngx.on_abort`)
 * Add bootstrapping functionality from Nginx configs
-* Add support for Resources (or view sets)
-* Add filesystem support for resources (or view sets)
-
+* Add support for resources (or view sets) (a more automated REST-routing)
+* Add filesystem routing support for resources (or view sets)
 
 ## See Also
 

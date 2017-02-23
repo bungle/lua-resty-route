@@ -607,6 +607,7 @@ This is a small collection of ideas that may or may not be implemented as
 a part of `lua-resty-route`.
 
 * Add more documentation
+* Add tests
 * Rewrite current middleware and add new ones
 * Rewrite current websocket handler
 * Add route statistics
@@ -626,7 +627,9 @@ a part of `lua-resty-route`.
 * ~~Add a support for some simple patterns (e.g. `#` for a number) to file system router~~
 * ~~Add `\Q` and `\E` regex quoting to simple matcher~~
 * Add bootstrapping functionality from Nginx configs
-* Add tests
+* Add support for Resources (or view sets)
+* Add filesystem support for resources (or view sets)
+
 
 ## See Also
 

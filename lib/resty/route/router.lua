@@ -131,7 +131,7 @@ function router:to(location, method)
     go(self, 4)
     local named = self[3][location]
     if named then
-        execute(self, 3, create(named))
+        execute(self, 3, type(named) == "function" and create(named) or create(function(...) named(...) end))
     else
         go(self, 3)
     end

@@ -622,6 +622,9 @@ a part of `lua-resty-route`.
 * Add a support for reverse routing
 * Add a support for form method spoofing
 * Add a support for client connection abort event handler (`ngx.on_abort`)
+* Add a support for host (and possibly) other headers filtering
+* Add a support for basic authentication
+* Add a support for JWT / OpenID Connect authentication
 * Add bootstrapping functionality from Nginx configs
 * Add support for resources (or view sets) (a more automated REST-routing)
 * Add filesystem routing support for resources (or view sets)

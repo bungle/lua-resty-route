@@ -85,16 +85,13 @@ local function finish(self, status, func, ...)
     end
     return func(...)
 end
-local router       = {}
+local router = { yield = yield }
 router.__index = router
 function router.new(...)
     local self = setmetatable({ { n = 0 }, ... }, router)
     self.context = setmetatable({ route = self }, { __index = self })
     self.context.context = self.context
     return self
-end
-function router:yield(...)
-    yield(...)
 end
 function router:redirect(uri, status)
     status = status or HTTP_302

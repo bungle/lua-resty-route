@@ -451,7 +451,7 @@ function route:fs(p, l)
                 l[3] = file == "#" and ":number" or file
                 dirs.n = dirs.n + 1
                 dirs[dirs.n] = { f, concat(l) }
-            elseif mode == "file" or mode == "link" and sub(file, -4) == ".lua" then
+            elseif (mode == "file" or mode == "link") and sub(file, -4) == ".lua" then
                 local b = sub(file, 1, #file - 4)
                 local m
                 local i = find(reverse(b), "@", 1, true)

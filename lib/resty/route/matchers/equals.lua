@@ -1,6 +1,6 @@
 local lower = string.lower
 return function(location, pattern, insensitive)
-    if insensitive then
+    if location and insensitive then
         location = lower(location)
         pattern  = lower(pattern)
     end

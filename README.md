@@ -123,7 +123,7 @@ OpenResty has support for PCRE compatible regualar expressions, and
 this matcher in particular, uses `ngx.re.match` function:
 
 ```lua
-route "~^/files/(\\w+)[.](\\w+)$" {
+route [[~^/files/(\w+)[.](\w+)$]] {
     get = function(self, file, ext) end
 }
 ```
@@ -134,7 +134,7 @@ and the function will be called with the captures.
 For Regex matcher we also have case-insensitive version:
 
 ```lua
-route "~*^/files/(\\w+)[.](\\w+)$" {
+route [[~*^/files/(\w+)[.](\w+)$]] {
     get = function(self, file, ext) end
 }
 ```

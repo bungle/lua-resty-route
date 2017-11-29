@@ -614,6 +614,9 @@ a part of `lua-resty-route`.
 * Add an automatic route cleaning and redirecting (possibly configurable) (clean function is already written)
 * Add an automatic slash handling and redirecting (possibly configurable)
 * Add a more automated way to define redirects
+* Add a support to route by host
+* Add a support to route by headers
+* Add a support for Nginx phases
 * Add a support for easy way to define Web Hooks routes
 * Add a support for easy way to define Server Sent Events routes
 * Add a support for "provides", e.g. renderers (?)
@@ -628,6 +631,7 @@ a part of `lua-resty-route`.
 * Add bootstrapping functionality from Nginx configs
 * Add support for resources (or view sets) (a more automated REST-routing)
 * Add filesystem routing support for resources (or view sets)
+
 
 ## See Also
 

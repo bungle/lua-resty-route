@@ -44,32 +44,32 @@ local function go(self, i)
         execute(self, i, a[j](self.method, self.location))
     end
 end
-local function finish(self, status, func, ...)
-    if status then
+local function finish(self, code, func, ...)
+    if code then
         local t = self[2]
         if next(t) then
             local f
-            if t[status] then
-                f = t[status]
-            elseif status == 499 and t.abort then
+            if t[code] then
+                f = t[code]
+            elseif code == 499 and t.abort then
                 f = t.abort
-            elseif status >= 100 and status <= 199 and t.info then
+            elseif code >= 100 and code <= 199 and t.info then
                 f = t.info
-            elseif status >= 200 and status <= 299 and t.success then
+            elseif code >= 200 and code <= 299 and t.success then
                 f = t.success
-            elseif status >= 300 and status <= 399 and t.redirect then
+            elseif code >= 300 and code <= 399 and t.redirect then
                 f = t.redirect
-            elseif status >= 400 and status <= 499 and t["client error"] then
+            elseif code >= 400 and code <= 499 and t["client error"] then
                 f = t["client error"]
-            elseif status >= 500 and status <= 599 and t["server error"] then
+            elseif code >= 500 and code <= 599 and t["server error"] then
                 f = t["server error"]
-            elseif status >= 400 and status <= 599 and t.error then
+            elseif code >= 400 and code <= 599 and t.error then
                 f = t.error
             elseif t[-1] then
                 f = t[-1]
             end
             if f then
-                local o, e = pcall(f, self.context, status)
+                local o, e = pcall(f, self.context, code)
                 if not o then log(WARN, e) end
             end
         end
@@ -93,13 +93,13 @@ function router.new(...)
     self.context.context = self.context
     return self
 end
-function router:redirect(uri, status)
-    status = status or HTTP_302
-    return finish(self, status, redirect, uri, status)
+function router:redirect(uri, code)
+    code = code or HTTP_302
+    return finish(self, code, redirect, uri, code)
 end
-function router:exit(status)
-    status = status or OK
-    return finish(self, status, exit, status)
+function router:exit(code)
+    code = code or OK
+    return finish(self, code, exit, code)
 end
 function router:exec(uri, args)
     status = status or OK

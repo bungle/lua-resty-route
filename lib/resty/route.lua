@@ -5,7 +5,6 @@ local getmetatable = getmetatable
 local reverse      = string.reverse
 local create       = coroutine.create
 local select       = select
-local rawget       = rawget
 local dofile       = dofile
 local assert       = assert
 local error        = error
@@ -120,9 +119,6 @@ local function array(t)
     end
     return c == m
 end
-local function object(t)
-    return type(t) == "table" and not(array(t))
-end
 local function callable(f)
     if type(f) == "function" then
         return true
@@ -196,17 +192,17 @@ local function named(self, i, c, f)
         if t == "function" then
             l[-1] = c
         elseif t == "table" then
-            for n, f in pairs(c) do
-                if callable(f) then
-                    l[n] = f
+            for n, x in pairs(c) do
+                if callable(x) then
+                    l[n] = x
                 end
             end
             if callable(c) then
                 l[-1] = c
             end
         else
-            return function(f)
-                return named(self, i, c, f)
+            return function(x)
+                return named(self, i, c, x)
             end
         end
     end
@@ -223,22 +219,22 @@ local function locator(l, m, p, f)
     if m then
         if p then
             local match, pattern, insensitive = resolve(p)
-            l[n] = function(method, location)
-                if m == method then
-                    return matcher(f, match(location, pattern, insensitive))
+            l[n] = function(request_method, request_location)
+                if m == request_method then
+                    return matcher(f, match(request_location, pattern, insensitive))
                 end
             end
         else
-            l[n] = function(method)
-                if m == method then
+            l[n] = function(request_method)
+                if m == request_method then
                     return create(f)
                 end
             end
         end
     elseif p then
         local match, pattern, insensitive = resolve(p)
-        l[n] = function(_, location)
-            return matcher(f, match(location, pattern, insensitive))
+        l[n] = function(_, request_location)
+            return matcher(f, match(request_location, pattern, insensitive))
         end
     else
         l[n] = function()
@@ -389,9 +385,9 @@ function route.new()
     local a, b = { n = 0 }, { n = 0 }
     return setmetatable({ {}, { n = 0 }, a, b, filter = filter.new(a, b) }, route)
 end
-function route:match(location, pattern)
-    local match, pattern, insensitive = resolve(pattern)
-    return match(location, pattern, insensitive)
+function route:match(l, p)
+    local m, q, i = resolve(p)
+    return m(l, q, i)
 end
 function route:clean(l)
     if type(l) ~= "string" or l == "" or l == "/" or l == "." or l == ".." then return "/" end
@@ -418,7 +414,6 @@ function route:clean(l)
         t[n] = nil
     elseif f ~= "." then
         t[n] = f
-        n = n + 1
     end
     return "/" .. concat(t, "/")
 end
@@ -447,10 +442,10 @@ function route:fs(p, l)
             local f = concat{ p, "/", file}
             local mode = attributes(f).mode
             if mode == "directory" then
-                local l = { l, "/" }
-                l[3] = file == "#" and ":number" or file
+                local x = { l, "/" }
+                x[3] = file == "#" and ":number" or file
                 dirs.n = dirs.n + 1
-                dirs[dirs.n] = { f, concat(l) }
+                dirs[dirs.n] = { f, concat(x) }
             elseif (mode == "file" or mode == "link") and sub(file, -4) == ".lua" then
                 local b = sub(file, 1, #file - 4)
                 local m
@@ -459,28 +454,28 @@ function route:fs(p, l)
                     m = sub(b, -i+1)
                     b = sub(b, 1, -i-1)
                 end
-                local p = { "@*/" }
+                local x = { "@*/" }
                 if l ~= "" then
-                    p[2] = l
+                    x[2] = l
                     if b ~= "index" then
                         if b == "#" then
-                            p[3] = "/:number"
+                            x[3] = "/:number"
                         else
-                            p[3] = "/"
-                            p[4] = b
+                            x[3] = "/"
+                            x[4] = b
                         end
                     end
                 else
                     if b ~= "index" then
                         if b == "#" then
-                            p[2] = ":number"
+                            x[2] = ":number"
                         else
-                            p[2] = b
+                            x[2] = b
                         end
                     end
                 end
                 f = dofile(f)
-                self(m, concat(p), f)
+                self(m, concat(x), f)
             end
         end
     end

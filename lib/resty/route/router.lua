@@ -51,6 +51,8 @@ local function finish(self, code, func, ...)
             local f
             if t[code] then
                 f = t[code]
+            elseif code == OK and t.ok then
+                f = t.ok
             elseif code == 499 and t.abort then
                 f = t.abort
             elseif code >= 100 and code <= 199 and t.info then
@@ -102,14 +104,13 @@ function router:exit(code)
     return finish(self, code, exit, code)
 end
 function router:exec(uri, args)
-    status = status or OK
-    return finish(self, status, exec, uri, args)
+    return finish(self, OK, exec, uri, args)
 end
 function router:done()
     return self:exit(HTTP_200)
 end
 function router:abort()
-    return self:exit(HTTP_200)
+    return self:exit(499)
 end
 function router:fail(error, code)
     if type(error) == "string" then
